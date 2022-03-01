@@ -66,11 +66,13 @@ def find_block_end(tokens):
         if tokens[i].value == KEYWORD_IF:
             stack.append(tokens[i])
         elif tokens[i].value == KEYWORD_ELSE:
-            if not stack:
-                sys.stdout.write(f"  [{tok.loc[0]}:{tok.loc[1]}] else without if\n")
-                exit(1)
-            stack[-1].block.end = i
-            stack.append(tokens[i])
+            if stack:
+                if stack[-1].value != KEYWORD_IF:
+                    sys.stdout.write(f"  [{tok.loc[0]}:{tok.loc[1]}] else without if\n")
+                    exit(1)
+                else:
+                    stack.pop().block.end = i
+                    stack.append(tokens[i])
         elif tokens[i].value == LCURLY:
             stack[-1].block = Block(i, None)
         elif tokens[i].value == RCURLY:
