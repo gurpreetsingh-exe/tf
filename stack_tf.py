@@ -116,7 +116,7 @@ def run_program(tokens):
             assert False, "unexpected token"
 
 def compile_program(tokens):
-    out_buffer = "section .text\n" + \
+    buffer = "section .text\n" + \
     "global _start\n" + \
     "print:\n" + \
     "    mov r8, -3689348814741910323\n" + \
@@ -157,31 +157,31 @@ def compile_program(tokens):
     while i < len(tokens):
         tok = tokens[i]
         if tok.type == TOKEN_NUMBER:
-            out_buffer += f"    ;; PUSH INT\n"
-            out_buffer += f"    push {int(tok.value)}\n"
+            buffer += f"    ;; PUSH INT\n" + \
+                      f"    push {int(tok.value)}\n"
         elif tok.type == TOKEN_OPEARTOR:
             if tok.value == OP_PLUS:
-                out_buffer += f"    ;; ADD\n"
-                out_buffer += f"    pop rax\n"
-                out_buffer += f"    pop rbx\n"
-                out_buffer += f"    add rax, rbx\n"
-                out_buffer += f"    push rax\n"
+                buffer += f"    ;; ADD\n" + \
+                           "    pop rax\n" + \
+                           "    pop rbx\n" + \
+                           "    add rax, rbx\n" + \
+                           "    push rax\n"
             elif tok.value == OP_MINUS:
-                out_buffer += f"    ;; SUB\n"
-                out_buffer += f"    pop rax\n"
-                out_buffer += f"    pop rbx\n"
-                out_buffer += f"    sub rax, rbx\n"
-                out_buffer += f"    push rax\n"
+                buffer += f"    ;; SUB\n" + \
+                           "    pop rax\n" + \
+                           "    pop rbx\n" + \
+                           "    sub rax, rbx\n" + \
+                           "    push rax\n"
         elif tok.type == TOKEN_INTRINSIC:
-            out_buffer += f"    pop rdi\n"
-            out_buffer += f"    call print\n"
+            buffer += f"    pop rdi\n" + \
+                       "    call print\n"
         i += 1
-    out_buffer += "    ;; RET\n" + \
+    buffer += "    ;; RET\n" + \
         "    mov rax, 60\n" + \
         "    mov rdi, 0\n" + \
         "    syscall\n"
 
-    return out_buffer
+    return buffer
 
 def run_command(args):
     buf = '>>> '
@@ -198,9 +198,9 @@ def execute(flag, program_file):
     if flag == "-r":
         run_program(tokens)
     elif flag == "-c":
-        out_buffer = compile_program(tokens)
+        buffer = compile_program(tokens)
         with open("a.asm", "w") as out:
-            out.write(out_buffer)
+            out.write(buffer)
 
         run_command(["nasm", "-felf64", "a.asm"])
         run_command(["ld", "-o", "a", "a.o"])
