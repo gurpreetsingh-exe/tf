@@ -62,6 +62,7 @@ def tokenize_program(lines):
 
 def find_block_end(tokens):
     stack = []
+    sep = []
     for i, tok in enumerate(tokens):
         if tokens[i].value == KEYWORD_IF:
             stack.append(tokens[i])
@@ -74,15 +75,16 @@ def find_block_end(tokens):
                     stack.pop().block.end = i
                     stack.append(tokens[i])
         elif tokens[i].value == LCURLY:
+            sep.append(tok)
             stack[-1].block = Block(i, None)
         elif tokens[i].value == RCURLY:
             stack[-1].block.end = i
+            sep[-1].block = Block(None, i)
         else:
             continue
     return tokens
 
 def run_program(tokens):
-    tokens = find_block_end(tokens)
     stack = []
     i = 0
     while i < len(tokens):
@@ -157,8 +159,8 @@ def compile_program(tokens):
     while i < len(tokens):
         tok = tokens[i]
         if tok.type == TOKEN_NUMBER:
-            buffer += f"    ;; PUSH INT\n" + \
-                      f"    push {int(tok.value)}\n"
+            buffer += f"    ;; PUSH {tok.value}\n" + \
+                      f"    push {tok.value}\n"
         elif tok.type == TOKEN_OPEARTOR:
             if tok.value == OP_PLUS:
                 buffer += f"    ;; ADD\n" + \
@@ -172,6 +174,17 @@ def compile_program(tokens):
                            "    pop rbx\n" + \
                            "    sub rax, rbx\n" + \
                            "    push rax\n"
+        elif tok.type == TOKEN_KEYWORD:
+            if tok.value == KEYWORD_IF:
+                buffer += f"    pop rax\n" + \
+                          f"    cmp rax, 0\n" + \
+                          f"    je endif_{tok.block.end}\n" + \
+                          f"if_{tok.block.start}:\n"
+        elif tok.type == TOKEN_SPECIAL_CHAR:
+            if tok.value == LCURLY:
+                pass
+            elif tok.value == RCURLY:
+                buffer += f"endif_{i}:\n"
         elif tok.type == TOKEN_INTRINSIC:
             buffer += f"    pop rdi\n" + \
                        "    call print\n"
@@ -194,16 +207,18 @@ def run_command(args):
 def execute(flag, program_file):
     program = load_file(program_file)
     tokens = list(tokenize_program(program))
+    tokens = find_block_end(tokens)
 
     if flag == "-r":
         run_program(tokens)
     elif flag == "-c":
         buffer = compile_program(tokens)
-        with open("a.asm", "w") as out:
+        out_filename = program_file.split('.')[0]
+        with open(out_filename + ".asm", "w") as out:
             out.write(buffer)
 
-        run_command(["nasm", "-felf64", "a.asm"])
-        run_command(["ld", "-o", "a", "a.o"])
+        run_command(["nasm", "-felf64", out_filename + ".asm"])
+        run_command(["ld", "-o", out_filename, out_filename + ".o"])
         sys.stdout.write("\n")
 
 def main(argv):
