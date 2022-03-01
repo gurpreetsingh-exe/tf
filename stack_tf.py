@@ -31,6 +31,7 @@ def parse_str(i, line):
 def tokenize_program(lines):
     for row, line in enumerate(lines):
         i = 0
+        line = ''.join(line.split("//")[0])
         while i < len(line):
             curr_char = line[i]
             if curr_char.isspace():
@@ -39,42 +40,47 @@ def tokenize_program(lines):
             elif curr_char.isdecimal():
                 col = i
                 i, num = parse_num(i, line)
-                yield Token(TOKEN_NUMBER, num, (row, col), num)
+                yield Token(TOKEN_NUMBER, num, (row + 1, col + 1), num)
             elif curr_char in OPS:
-                yield Token(TOKEN_OPEARTOR, OPS[curr_char], (row, i), curr_char)
+                yield Token(TOKEN_OPEARTOR, OPS[curr_char], (row + 1, i + 1), curr_char)
                 i += 1
             elif curr_char.isalpha():
                 col = i
                 i, __str = parse_str(i, line)
                 if __str in KEYWORDS:
-                    yield Token(TOKEN_KEYWORD, KEYWORDS[__str], (row, col), __str)
+                    yield Token(TOKEN_KEYWORD, KEYWORDS[__str], (row + 1, col + 1), __str)
                 elif __str in INTRINSICS:
-                    yield Token(TOKEN_INTRINSIC, INTRINSICS[__str], (row, col), __str)
+                    yield Token(TOKEN_INTRINSIC, INTRINSICS[__str], (row + 1, col + 1), __str)
                 else:
-                    sys.stdout.write(f"  [{row}:{col}] unexpected token {__str}\n")
+                    sys.stdout.write(f"  [{row + 1}:{col + 1}] unexpected token {__str}\n")
                     exit(1)
             elif curr_char in SPECIAL_CHARS:
-                yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[curr_char], (row, i), curr_char)
+                yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[curr_char], (row + 1, i + 1), curr_char)
                 i += 1
             else:
                 assert False, "Unreachable"
 
-def find_block_end(i, tokens):
-    tok = tokens[i]
-    if tok.value != LCURLY:
-        sys.stdout.write("  [{}:{}] unexpected token {}, expected \"{}\"\n".format(tok.loc[0], tok.loc[1], tok.raw, "{"))
-        exit(1)
-    i += 1
-    while i < len(tokens):
-        tok = tokens[i]
-        if tok.value == RCURLY:
-            return i
-        i += 1
-    else:
-        sys.stdout.write("  [{}:{}] expected \"{}\"\n".format(tok.loc[0], tok.loc[1], "}"))
-        exit(1)
+def find_block_end(tokens):
+    stack = []
+    for i, tok in enumerate(tokens):
+        if tokens[i].value == KEYWORD_IF:
+            stack.append(tokens[i])
+        elif tokens[i].value == KEYWORD_ELSE:
+            if not stack:
+                sys.stdout.write(f"  [{tok.loc[0]}:{tok.loc[1]}] else without if\n")
+                exit(1)
+            stack[-1].block.end = i
+            stack.append(tokens[i])
+        elif tokens[i].value == LCURLY:
+            stack[-1].block = Block(i, None)
+        elif tokens[i].value == RCURLY:
+            stack[-1].block.end = i
+        else:
+            continue
+    return tokens
 
 def run_program(tokens):
+    tokens = find_block_end(tokens)
     stack = []
     i = 0
     while i < len(tokens):
@@ -92,18 +98,13 @@ def run_program(tokens):
             i += 1
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
-                i += 1
-                end = find_block_end(i, tokens)
-                if not stack.pop():
-                    i = end
+                if stack.pop() == 0:
+                    i = tok.block.end + 1
                 else:
                     i += 1
             elif tok.value == KEYWORD_ELSE:
-                i += 1
-                end = find_block_end(i, tokens)
+                i = tok.block.end
         elif tok.type == TOKEN_SPECIAL_CHAR:
-            if tok.value == LCURLY:
-                tok.block.set(i, find_block_end(i, tokens))
             i += 1
         elif tok.type == TOKEN_INTRINSIC:
             if tok.value == INTRINSIC_PRINT:
