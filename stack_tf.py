@@ -180,6 +180,9 @@ def compile_program(tokens):
                           f"    cmp rax, 0\n" + \
                           f"    je endif_{tok.block.end}\n" + \
                           f"if_{tok.block.start}:\n"
+            if tok.value == KEYWORD_ELSE:
+                buffer += f"    jmp endif_{tok.block.end}\n" + \
+                          f"endif_{i}:\n"
         elif tok.type == TOKEN_SPECIAL_CHAR:
             if tok.value == LCURLY:
                 pass
