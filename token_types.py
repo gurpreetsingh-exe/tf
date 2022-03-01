@@ -19,10 +19,18 @@ TOKEN_SPECIAL_CHAR = __auto()
 
 OP_PLUS = __auto()
 OP_MINUS = __auto()
+OP_DROP = __auto()
+OP_SWAP = __auto()
+OP_DUP = __auto()
+OP_OVER = __auto()
 
 OPS = {
     '+': OP_PLUS,
     '-': OP_MINUS,
+    'drop': OP_DROP,
+    'swap': OP_SWAP,
+    'dup': OP_DUP,
+    'over': OP_OVER,
 }
 
 # + ========== +

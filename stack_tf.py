@@ -51,6 +51,8 @@ def tokenize_program(lines):
                     yield Token(TOKEN_KEYWORD, KEYWORDS[__str], (row + 1, col + 1), __str)
                 elif __str in INTRINSICS:
                     yield Token(TOKEN_INTRINSIC, INTRINSICS[__str], (row + 1, col + 1), __str)
+                elif __str in OPS:
+                    yield Token(TOKEN_OPEARTOR, OPS[__str], (row + 1, col + 1), __str)
                 else:
                     sys.stdout.write(f"  [{row + 1}:{col + 1}] unexpected token {__str}\n")
                     exit(1)
@@ -84,6 +86,9 @@ def find_block_end(tokens):
             continue
     return tokens
 
+def lslice(lst, i):
+    return lst[i:], lst[:i]
+
 def run_program(tokens):
     stack = []
     i = 0
@@ -93,12 +98,22 @@ def run_program(tokens):
             stack.append(int(tok.value))
             i += 1
         elif tok.type == TOKEN_OPEARTOR:
-            a = stack.pop()
-            b = stack.pop()
             if tok.value == OP_PLUS:
+                [b, a], stack = lslice(stack, -2)
                 stack.append(a + b)
             elif tok.value == OP_MINUS:
+                [b, a], stack = lslice(stack, -2)
                 stack.append(a - b)
+            elif tok.value == OP_DROP:
+                stack.pop()
+            elif tok.value == OP_SWAP:
+                [b, a], stack = lslice(stack, -2)
+                stack.append(a)
+                stack.append(b)
+            elif tok.value == OP_DUP:
+                stack.append(stack[-1])
+            elif tok.value == OP_OVER:
+                stack.append(stack[-2])
             i += 1
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
@@ -174,6 +189,27 @@ def compile_program(tokens):
                            "    pop rbx\n" + \
                            "    sub rax, rbx\n" + \
                            "    push rax\n"
+            elif tok.value == OP_DROP:
+                buffer += f"    ;; DROP\n" + \
+                           "    pop rax\n"
+            elif tok.value == OP_SWAP:
+                buffer += f"    ;; SWAP\n" + \
+                           "    pop rax\n" + \
+                           "    pop rbx\n" + \
+                           "    push rax\n" + \
+                           "    push rbx\n"
+            elif tok.value == OP_DUP:
+                buffer += f"    ;; DUP\n" + \
+                           "    pop rax\n" + \
+                           "    push rax\n" + \
+                           "    push rax\n"
+            elif tok.value == OP_OVER:
+                buffer += f"    ;; OVER\n" + \
+                           "    pop rax\n" + \
+                           "    pop rbx\n" + \
+                           "    push rbx\n" + \
+                           "    push rax\n" + \
+                           "    push rbx\n"
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 buffer += f"    pop rax\n" + \
