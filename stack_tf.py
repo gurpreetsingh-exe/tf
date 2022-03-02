@@ -64,24 +64,13 @@ def tokenize_program(lines):
 
 def find_block_end(tokens):
     stack = []
-    sep = []
     for i, tok in enumerate(tokens):
-        if tokens[i].value == KEYWORD_IF:
-            stack.append(tokens[i])
-        elif tokens[i].value == KEYWORD_ELSE:
-            if stack:
-                if stack[-1].value != KEYWORD_IF:
-                    sys.stdout.write(f"  [{tok.loc[0]}:{tok.loc[1]}] else without if\n")
-                    exit(1)
-                else:
-                    stack.pop().block.end = i
-                    stack.append(tokens[i])
-        elif tokens[i].value == LCURLY:
-            sep.append(tok)
-            stack[-1].block = Block(i, None)
-        elif tokens[i].value == RCURLY:
-            stack[-1].block.end = i
-            sep[-1].block = Block(None, i)
+        if tok.value == KEYWORD_IF:
+            stack.append(tok)
+        elif tok.value == KEYWORD_ELSE:
+            stack.append(tok)
+        elif tok.value == RCURLY:
+            stack.pop().block = Block(None, i)
         else:
             continue
     return tokens
@@ -118,7 +107,7 @@ def run_program(tokens):
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 if stack.pop() == 0:
-                    i = tok.block.end + 1
+                    i = tok.block.end + 2
                 else:
                     i += 1
             elif tok.value == KEYWORD_ELSE:
