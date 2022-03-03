@@ -265,6 +265,14 @@ def compile_program(tokens):
                 buffer += f"    ;; ELSE\n" + \
                           f"    jmp addr_{tok.block.end}\n" + \
                           f"addr_{i}:\n"
+            elif tok.value == KEYWORD_DO:
+                buffer += f"    ;; DO\n" + \
+                          f"do_{i}:\n"
+            elif tok.value == KEYWORD_WHILE:
+                buffer += f"    ;; WHILE\n" + \
+                          f"    pop rax\n" + \
+                          f"    cmp rax, 0\n" + \
+                          f"    jne do_{tok.block.start}\n"
         elif tok.type == TOKEN_SPECIAL_CHAR:
             if tok.value == RCURLY:
                 buffer += f"addr_{i}:\n"
