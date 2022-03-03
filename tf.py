@@ -96,6 +96,9 @@ def run_program(tokens):
             elif tok.value == OP_MINUS:
                 [b, a], stack = lslice(stack, -2)
                 stack.append(a - b)
+            elif tok.value == OP_EQ:
+                [b, a], stack = lslice(stack, -2)
+                stack.append(int(a == b))
             elif tok.value == OP_DROP:
                 stack.pop()
             elif tok.value == OP_SWAP:
@@ -181,6 +184,15 @@ def compile_program(tokens):
                            "    pop rbx\n" + \
                            "    sub rax, rbx\n" + \
                            "    push rax\n"
+            elif tok.value == OP_EQ:
+                buffer += f"    ;; EQ\n" + \
+                           "    pop rax\n" + \
+                           "    pop rbx\n" + \
+                           "    mov rcx, 1\n" + \
+                           "    mov rdx, 0\n" + \
+                           "    cmp rax, rbx\n" + \
+                           "    cmove rdx, rcx\n" + \
+                           "    push rdx\n"
             elif tok.value == OP_DROP:
                 buffer += f"    ;; DROP\n" + \
                            "    pop rax\n"
