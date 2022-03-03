@@ -70,7 +70,14 @@ def find_block_end(tokens):
         elif tok.value == KEYWORD_ELSE:
             stack.pop().block.end = i
             stack.append(tok)
+        elif tok.value == KEYWORD_DO:
+            tok.block = Block(i, None)
+            stack.append(tok)
+        elif tok.value == KEYWORD_WHILE:
+            tok.block = stack.pop().block
         elif tok.value == RCURLY:
+            if stack[-1].value == KEYWORD_DO:
+                continue
             stack[-1].block = Block(None, i)
             if i + 1 < len(tokens) and tokens[i + 1].value != KEYWORD_ELSE:
                 stack.pop()
@@ -119,11 +126,21 @@ def run_program(tokens):
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 if stack.pop() == 0:
-                    i = tok.block.end + 2
+                    if tokens[tok.block.end + 1].value == KEYWORD_ELSE:
+                        i = tok.block.end + 2
+                    else:
+                        i = tok.block.end + 1
                 else:
                     i += 1
             elif tok.value == KEYWORD_ELSE:
                 i = tok.block.end
+            elif tok.value == KEYWORD_DO:
+                i += 1
+            elif tok.value == KEYWORD_WHILE:
+                if stack.pop() == 0:
+                    i += 1
+                else:
+                    i = tok.block.start
         elif tok.type == TOKEN_SPECIAL_CHAR:
             i += 1
         elif tok.type == TOKEN_INTRINSIC:

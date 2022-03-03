@@ -45,10 +45,14 @@ OPS = {
 
 KEYWORD_IF = __auto()
 KEYWORD_ELSE = __auto()
+KEYWORD_DO = __auto()
+KEYWORD_WHILE = __auto()
 
 KEYWORDS = {
     "if": KEYWORD_IF,
     "else": KEYWORD_ELSE,
+    "do": KEYWORD_DO,
+    "while": KEYWORD_WHILE,
 }
 
 # + ============ +
