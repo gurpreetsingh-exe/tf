@@ -68,9 +68,12 @@ def find_block_end(tokens):
         if tok.value == KEYWORD_IF:
             stack.append(tok)
         elif tok.value == KEYWORD_ELSE:
+            stack.pop().block.end = i
             stack.append(tok)
         elif tok.value == RCURLY:
-            stack.pop().block = Block(None, i)
+            stack[-1].block = Block(None, i)
+            if i + 1 < len(tokens) and tokens[i + 1].value != KEYWORD_ELSE:
+                stack.pop()
         else:
             continue
     return tokens
@@ -201,18 +204,17 @@ def compile_program(tokens):
                            "    push rbx\n"
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
-                buffer += f"    pop rax\n" + \
+                buffer += f"    ;; IF\n" + \
+                          f"    pop rax\n" + \
                           f"    cmp rax, 0\n" + \
-                          f"    je endif_{tok.block.end}\n" + \
-                          f"if_{tok.block.start}:\n"
-            if tok.value == KEYWORD_ELSE:
-                buffer += f"    jmp endif_{tok.block.end}\n" + \
-                          f"endif_{i}:\n"
+                          f"    je addr_{tok.block.end}\n"
+            elif tok.value == KEYWORD_ELSE:
+                buffer += f"    ;; ELSE\n" + \
+                          f"    jmp addr_{tok.block.end}\n" + \
+                          f"addr_{i}:\n"
         elif tok.type == TOKEN_SPECIAL_CHAR:
-            if tok.value == LCURLY:
-                pass
-            elif tok.value == RCURLY:
-                buffer += f"endif_{i}:\n"
+            if tok.value == RCURLY:
+                buffer += f"addr_{i}:\n"
         elif tok.type == TOKEN_INTRINSIC:
             buffer += f"    pop rdi\n" + \
                        "    call print\n"
