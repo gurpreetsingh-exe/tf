@@ -26,6 +26,7 @@ OP_DROP = __auto()
 OP_SWAP = __auto()
 OP_DUP = __auto()
 OP_OVER = __auto()
+OP_ROT = __auto()
 
 OPS = {
     '+': OP_PLUS,
@@ -37,6 +38,7 @@ OPS = {
     'swap': OP_SWAP,
     'dup': OP_DUP,
     'over': OP_OVER,
+    'rot': OP_ROT,
 }
 
 # + ========== +

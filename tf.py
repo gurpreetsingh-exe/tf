@@ -122,6 +122,11 @@ def run_program(tokens):
                 stack.append(stack[-1])
             elif tok.value == OP_OVER:
                 stack.append(stack[-2])
+            elif tok.value == OP_ROT:
+                last3, stack = lslice(stack, -3)
+                last2, [last] = lslice(last3, -2)
+                last2.append(last)
+                stack.extend(last2)
             i += 1
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
@@ -255,6 +260,14 @@ def compile_program(tokens):
                            "    push rbx\n" + \
                            "    push rax\n" + \
                            "    push rbx\n"
+            elif tok.value == OP_ROT:
+                buffer += f"    ;; ROT\n" + \
+                           "    pop rax\n" + \
+                           "    pop rbx\n" + \
+                           "    pop rcx\n" + \
+                           "    push rbx\n" + \
+                           "    push rax\n" + \
+                           "    push rcx\n"
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 buffer += f"    ;; IF\n" + \
