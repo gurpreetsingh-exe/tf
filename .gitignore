@@ -2,5 +2,4 @@ __pycache__/
 .vscode/
 tests/
 make.sh
-a*
 main*
