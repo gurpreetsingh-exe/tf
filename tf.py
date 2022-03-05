@@ -8,7 +8,28 @@ from Token import *
 
 def load_file(file_path):
     with open(file_path) as f:
-        return f.readlines()
+        src = f.readlines()
+        return pre_process(src)
+
+macros = {}
+
+def pre_process(src):
+    for i in range(len(src)):
+        line = src[i]
+        if "#define" in line:
+            line = line.replace("#define ", "")
+            macro_name = line.split(" ")[0]
+            if macro_name in macros:
+                sys.stdout.write(f"macro re-definition at line {i + 1}\n")
+                exit(1)
+            macros[macro_name] = line.replace(macro_name, "").lstrip(" ")
+            src[i] = src[i].replace(src[i], "\n")
+            continue
+        for macro_name, tokens in macros.items():
+            if macro_name in line:
+                src[i] = src[i].replace(macro_name, tokens)
+
+    return src
 
 def parse_num(i, line):
     num = ''
