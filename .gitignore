@@ -3,3 +3,4 @@ __pycache__/
 tests/
 make.sh
 main*
+test*
