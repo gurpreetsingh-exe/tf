@@ -131,10 +131,11 @@ def run_program(tokens):
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 if stack.pop() == 0:
-                    if tokens[tok.block.end + 1].value == KEYWORD_ELSE:
-                        i = tok.block.end + 2
+                    jump_addr = tok.block.end + 1
+                    if jump_addr < len(tokens) and tokens[jump_addr].value == KEYWORD_ELSE:
+                        i = jump_addr + 1
                     else:
-                        i = tok.block.end + 1
+                        i = jump_addr
                 else:
                     i += 1
             elif tok.value == KEYWORD_ELSE:
