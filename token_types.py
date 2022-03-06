@@ -27,6 +27,7 @@ OP_SWAP = __auto()
 OP_DUP = __auto()
 OP_OVER = __auto()
 OP_ROT = __auto()
+OP_ADDRESS = __auto()
 
 OPS = {
     '+': OP_PLUS,
@@ -39,6 +40,7 @@ OPS = {
     'dup': OP_DUP,
     'over': OP_OVER,
     'rot': OP_ROT,
+    '@': OP_ADDRESS,
 }
 
 # + ========== +
