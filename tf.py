@@ -115,7 +115,6 @@ def run_program(tokens):
     stack = []
     i = 0
     mem = bytearray(MEM_CAPACITY)
-    MEM_POINTER = 0
 
     while i < len(tokens):
         tok = tokens[i]
@@ -154,14 +153,13 @@ def run_program(tokens):
                 last2.append(last)
                 stack.extend(last2)
             elif tok.value == OP_MEM:
-                stack.append(MEM_POINTER)
+                stack.append(0)
             elif tok.value == OP_READ:
                 a = stack.pop()
                 stack.append(mem[a])
             elif tok.value == OP_WRITE:
                 [b, a], stack = lslice(stack, -2)
                 mem[b] = a & 0xff
-                MEM_POINTER = b
             i += 1
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
@@ -190,9 +188,6 @@ def run_program(tokens):
             i += 1
         else:
             assert False, "unexpected token"
-
-    print("memory_layout: ", mem[:10])
-    print("stack_layout: ", stack)
 
 def compile_program(tokens):
     buffer = "section .text\n" + \
@@ -307,6 +302,20 @@ def compile_program(tokens):
                            "    push rbx\n" + \
                            "    push rax\n" + \
                            "    push rcx\n"
+            elif tok.value == OP_MEM:
+                buffer += f"    ;; MEM\n" + \
+                           "    push mem\n"
+            elif tok.value == OP_READ:
+                buffer += f"    ;; READ\n" + \
+                           "    pop rax\n" + \
+                           "    xor rbx, rbx\n" + \
+                           "    mov bl, [rax]\n" + \
+                           "    push rbx\n"
+            elif tok.value == OP_WRITE:
+                buffer += f"    ;; WRITE\n" + \
+                           "    pop rbx\n" + \
+                           "    pop rax\n" + \
+                           "    mov [rax], bl\n"
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 buffer += f"    ;; IF\n" + \
@@ -335,7 +344,9 @@ def compile_program(tokens):
     buffer += "    ;; RET\n" + \
         "    mov rax, 60\n" + \
         "    mov rdi, 0\n" + \
-        "    syscall\n"
+        "    syscall\n\n" + \
+        "section .bss\n" + \
+        "    mem: resb 1024\n"
 
     return buffer
 
