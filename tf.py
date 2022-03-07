@@ -109,9 +109,14 @@ def find_block_end(tokens):
 def lslice(lst, i):
     return lst[i:], lst[:i]
 
+MEM_CAPACITY = 1024
+
 def run_program(tokens):
     stack = []
     i = 0
+    mem = bytearray(MEM_CAPACITY)
+    MEM_POINTER = 0
+
     while i < len(tokens):
         tok = tokens[i]
         if tok.type == TOKEN_NUMBER:
@@ -148,6 +153,15 @@ def run_program(tokens):
                 last2, [last] = lslice(last3, -2)
                 last2.append(last)
                 stack.extend(last2)
+            elif tok.value == OP_MEM:
+                stack.append(MEM_POINTER)
+            elif tok.value == OP_READ:
+                a = stack.pop()
+                stack.append(mem[a])
+            elif tok.value == OP_WRITE:
+                [b, a], stack = lslice(stack, -2)
+                mem[b] = a & 0xff
+                MEM_POINTER = b
             i += 1
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
@@ -176,6 +190,9 @@ def run_program(tokens):
             i += 1
         else:
             assert False, "unexpected token"
+
+    print("memory_layout: ", mem[:10])
+    print("stack_layout: ", stack)
 
 def compile_program(tokens):
     buffer = "section .text\n" + \
