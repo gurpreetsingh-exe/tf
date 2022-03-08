@@ -12,6 +12,7 @@ TOKEN_OPEARTOR = __auto()
 TOKEN_KEYWORD = __auto()
 TOKEN_INTRINSIC = __auto()
 TOKEN_SPECIAL_CHAR = __auto()
+TOKEN_STRING_LITERAL = __auto()
 
 # + =========== +
 # |  Operators  |
@@ -79,8 +80,10 @@ INTRINSICS = {
 
 LCURLY = __auto()
 RCURLY = __auto()
+DOUBLE_QUOTE = __auto()
 
 SPECIAL_CHARS = {
-    "{": LCURLY,
-    "}": RCURLY,
+    '{': LCURLY,
+    '}': RCURLY,
+    '"': DOUBLE_QUOTE
 }
