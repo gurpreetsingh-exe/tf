@@ -49,6 +49,15 @@ def parse_str(i, line):
 
     return i, char_buf
 
+def parse_string_literal(i, line):
+    str_literal = ""
+
+    while i < len(line) and line[i] != '"':
+        str_literal += line[i]
+        i += 1
+
+    return i, str_literal
+
 def tokenize_program(lines):
     for row, line in enumerate(lines):
         i = 0
@@ -78,7 +87,12 @@ def tokenize_program(lines):
                     sys.stdout.write(f"  [{row + 1}:{col + 1}] unexpected token {__str}\n")
                     exit(1)
             elif curr_char in SPECIAL_CHARS:
-                yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[curr_char], (row + 1, i + 1), curr_char)
+                if curr_char == '"':
+                    col = i
+                    i, __str = parse_string_literal(i + 1, line)
+                    yield Token(TOKEN_STRING_LITERAL, __str, (row + 1, col + 1), __str)
+                else:
+                    yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[curr_char], (row + 1, i + 1), curr_char)
                 i += 1
             else:
                 assert False, "Unreachable"
@@ -110,11 +124,13 @@ def lslice(lst, i):
     return lst[i:], lst[:i]
 
 MEM_CAPACITY = 1024
+STR_BUFFER_CAPACITY = 1024
 
 def run_program(tokens):
     stack = []
     i = 0
-    mem = bytearray(MEM_CAPACITY)
+    mem = bytearray(STR_BUFFER_CAPACITY + MEM_CAPACITY)
+    str_buffer_pointer = 0
 
     while i < len(tokens):
         tok = tokens[i]
@@ -153,7 +169,7 @@ def run_program(tokens):
                 last2.append(last)
                 stack.extend(last2)
             elif tok.value == OP_MEM:
-                stack.append(0)
+                stack.append(STR_BUFFER_CAPACITY)
             elif tok.value == OP_READ:
                 a = stack.pop()
                 stack.append(mem[a])
@@ -185,6 +201,12 @@ def run_program(tokens):
         elif tok.type == TOKEN_INTRINSIC:
             if tok.value == INTRINSIC_PRINT:
                 print(stack.pop())
+            i += 1
+        elif tok.type == TOKEN_STRING_LITERAL:
+            stack.append(str_buffer_pointer)
+            for c in tok.value.encode('utf-8'):
+                mem[str_buffer_pointer] = c
+                str_buffer_pointer += 1
             i += 1
         else:
             assert False, "unexpected token"
