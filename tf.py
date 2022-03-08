@@ -249,6 +249,7 @@ def compile_program(tokens):
     "    ret\n" + \
     "_start:\n"
 
+    strings = []
     i = 0
     while i < len(tokens):
         tok = tokens[i]
@@ -362,13 +363,20 @@ def compile_program(tokens):
         elif tok.type == TOKEN_INTRINSIC:
             buffer += f"    pop rdi\n" + \
                        "    call print\n"
+        elif tok.type == TOKEN_STRING_LITERAL:
+            buffer += f"    ;; STRING\n" + \
+                      f"    push str_{len(strings)}\n"
+            strings.append(tok.value)
         i += 1
     buffer += "    ;; RET\n" + \
         "    mov rax, 60\n" + \
         "    mov rdi, 0\n" + \
         "    syscall\n\n" + \
         "section .bss\n" + \
-        "    mem: resb 1024\n"
+        "    mem: resb 1024\n" + \
+        "section .data\n"
+    for x, string in enumerate(strings):
+        buffer += f"str_{x}:\n   db \"{string}\"\n"
 
     return buffer
 
