@@ -69,9 +69,11 @@ KEYWORDS = {
 # + ============ +
 
 INTRINSIC_PRINT = __auto()
+INTRINSIC_SYSCALL3 = __auto()
 
 INTRINSICS = {
     'print': INTRINSIC_PRINT,
+    'syscall3': INTRINSIC_SYSCALL3,
 }
 
 # + ==================== +

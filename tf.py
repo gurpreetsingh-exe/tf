@@ -201,6 +201,18 @@ def run_program(tokens):
         elif tok.type == TOKEN_INTRINSIC:
             if tok.value == INTRINSIC_PRINT:
                 print(stack.pop())
+            elif tok.value == INTRINSIC_SYSCALL3:
+                [syscall, fd, ptr_string, str_len], stack = lslice(stack, -4)
+                if syscall == 1:
+                    if fd == 0:
+                        assert False, "Not implemented"
+                    elif fd == 1:
+                        buffer = mem[ptr_string:][:str_len].decode('utf-8')
+                        print(buffer)
+                    elif fd == 2:
+                        assert False, "Not implemented"
+                else:
+                    assert False, "Not Implemented"
             i += 1
         elif tok.type == TOKEN_STRING_LITERAL:
             stack.append(str_buffer_pointer)
@@ -361,8 +373,16 @@ def compile_program(tokens):
             if tok.value == RCURLY:
                 buffer += f"addr_{i}:\n"
         elif tok.type == TOKEN_INTRINSIC:
-            buffer += f"    pop rdi\n" + \
-                       "    call print\n"
+            if tok.value == INTRINSIC_PRINT:
+                buffer += f"    pop rdi\n" + \
+                           "    call print\n"
+            elif tok.value == INTRINSIC_SYSCALL3:
+                buffer += f"    ;; SYSCALL 3\n" + \
+                           "    pop rdx\n" + \
+                           "    pop rsi\n" + \
+                           "    pop rdi\n" + \
+                           "    pop rax\n" + \
+                           "    syscall\n"
         elif tok.type == TOKEN_STRING_LITERAL:
             buffer += f"    ;; STRING\n" + \
                       f"    push str_{len(strings)}\n"
