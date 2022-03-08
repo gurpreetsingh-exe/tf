@@ -8,7 +8,28 @@ from Token import *
 
 def load_file(file_path):
     with open(file_path) as f:
-        return f.readlines()
+        src = f.readlines()
+        return pre_process(src)
+
+macros = {}
+
+def pre_process(src):
+    for i in range(len(src)):
+        line = src[i]
+        if "#define" in line:
+            line = line.replace("#define ", "")
+            macro_name = line.split(" ")[0]
+            if macro_name in macros:
+                sys.stdout.write(f"macro re-definition at line {i + 1}\n")
+                exit(1)
+            macros[macro_name] = line.replace(macro_name, "").lstrip(" ")
+            src[i] = src[i].replace(src[i], "\n")
+            continue
+        for macro_name, tokens in macros.items():
+            if macro_name in line:
+                src[i] = src[i].replace(macro_name, tokens)
+
+    return src
 
 def parse_num(i, line):
     num = ''
@@ -88,9 +109,13 @@ def find_block_end(tokens):
 def lslice(lst, i):
     return lst[i:], lst[:i]
 
+MEM_CAPACITY = 1024
+
 def run_program(tokens):
     stack = []
     i = 0
+    mem = bytearray(MEM_CAPACITY)
+
     while i < len(tokens):
         tok = tokens[i]
         if tok.type == TOKEN_NUMBER:
@@ -127,6 +152,14 @@ def run_program(tokens):
                 last2, [last] = lslice(last3, -2)
                 last2.append(last)
                 stack.extend(last2)
+            elif tok.value == OP_MEM:
+                stack.append(0)
+            elif tok.value == OP_READ:
+                a = stack.pop()
+                stack.append(mem[a])
+            elif tok.value == OP_WRITE:
+                [b, a], stack = lslice(stack, -2)
+                mem[b] = a & 0xff
             i += 1
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
@@ -269,6 +302,20 @@ def compile_program(tokens):
                            "    push rbx\n" + \
                            "    push rax\n" + \
                            "    push rcx\n"
+            elif tok.value == OP_MEM:
+                buffer += f"    ;; MEM\n" + \
+                           "    push mem\n"
+            elif tok.value == OP_READ:
+                buffer += f"    ;; READ\n" + \
+                           "    pop rax\n" + \
+                           "    xor rbx, rbx\n" + \
+                           "    mov bl, [rax]\n" + \
+                           "    push rbx\n"
+            elif tok.value == OP_WRITE:
+                buffer += f"    ;; WRITE\n" + \
+                           "    pop rbx\n" + \
+                           "    pop rax\n" + \
+                           "    mov [rax], bl\n"
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 buffer += f"    ;; IF\n" + \
@@ -297,7 +344,9 @@ def compile_program(tokens):
     buffer += "    ;; RET\n" + \
         "    mov rax, 60\n" + \
         "    mov rdi, 0\n" + \
-        "    syscall\n"
+        "    syscall\n\n" + \
+        "section .bss\n" + \
+        "    mem: resb 1024\n"
 
     return buffer
 

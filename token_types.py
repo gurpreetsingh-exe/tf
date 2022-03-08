@@ -27,6 +27,9 @@ OP_SWAP = __auto()
 OP_DUP = __auto()
 OP_OVER = __auto()
 OP_ROT = __auto()
+OP_MEM = __auto()
+OP_READ = __auto()
+OP_WRITE = __auto()
 
 OPS = {
     '+': OP_PLUS,
@@ -39,6 +42,9 @@ OPS = {
     'dup': OP_DUP,
     'over': OP_OVER,
     'rot': OP_ROT,
+    'mem': OP_MEM,
+    '@': OP_READ,
+    '&': OP_WRITE,
 }
 
 # + ========== +
