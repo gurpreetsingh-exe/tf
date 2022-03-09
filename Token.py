@@ -19,4 +19,4 @@ class Token:
         self.block = block
 
     def __repr__(self):
-        return f"r: {self.raw}, t: {self.type}, v: {self.value}, b: {self.block}"
+        return f"r: {self.raw}, t: {self.type}, v: {self.value}, b: {self.block}, loc:({self.loc[0]}, {self.loc[1]})"
