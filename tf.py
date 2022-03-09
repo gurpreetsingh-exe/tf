@@ -90,7 +90,7 @@ def tokenize_program(lines):
                 if curr_char == '"':
                     col = i
                     i, __str = parse_string_literal(i + 1, line)
-                    yield Token(TOKEN_STRING_LITERAL, __str, (row + 1, col + 1), __str)
+                    yield Token(TOKEN_STRING_LITERAL, bytes(__str, 'utf-8'), (row + 1, col + 1), __str)
                 else:
                     yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[curr_char], (row + 1, i + 1), curr_char)
                 i += 1
@@ -207,7 +207,7 @@ def run_program(tokens):
                     if fd == 0:
                         assert False, "Not implemented"
                     elif fd == 1:
-                        buffer = mem[ptr_string:][:str_len].decode('utf-8')
+                        buffer = mem[ptr_string:][:str_len]
                         print(buffer)
                     elif fd == 2:
                         assert False, "Not implemented"
@@ -216,7 +216,7 @@ def run_program(tokens):
             i += 1
         elif tok.type == TOKEN_STRING_LITERAL:
             stack.append(str_buffer_pointer)
-            for c in tok.value.encode('utf-8'):
+            for c in tok.value:
                 mem[str_buffer_pointer] = c
                 str_buffer_pointer += 1
             i += 1
@@ -395,8 +395,12 @@ def compile_program(tokens):
         "section .bss\n" + \
         "    mem: resb 1024\n" + \
         "section .data\n"
+
     for x, string in enumerate(strings):
-        buffer += f"str_{x}:\n   db \"{string}\"\n"
+        #string = string.encode('utf-8')
+        string = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
+
+        buffer += f"str_{x}:\n   db {string}\n"
 
     return buffer
 
