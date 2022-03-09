@@ -120,110 +120,7 @@ def find_block_end(tokens):
             continue
     return tokens
 
-def lslice(lst, i):
-    return lst[i:], lst[:i]
-
-MEM_CAPACITY = 1024
-STR_BUFFER_CAPACITY = 1024
-
-def run_program(tokens):
-    stack = []
-    i = 0
-    mem = bytearray(STR_BUFFER_CAPACITY + MEM_CAPACITY)
-    str_buffer_pointer = 0
-
-    while i < len(tokens):
-        tok = tokens[i]
-        if tok.type == TOKEN_NUMBER:
-            stack.append(int(tok.value))
-            i += 1
-        elif tok.type == TOKEN_OPEARTOR:
-            if tok.value == OP_PLUS:
-                [b, a], stack = lslice(stack, -2)
-                stack.append(a + b)
-            elif tok.value == OP_MINUS:
-                [b, a], stack = lslice(stack, -2)
-                stack.append(b - a)
-            elif tok.value == OP_EQ:
-                [b, a], stack = lslice(stack, -2)
-                stack.append(int(a == b))
-            elif tok.value == OP_LT:
-                [b, a], stack = lslice(stack, -2)
-                stack.append(int(b < a))
-            elif tok.value == OP_GT:
-                [b, a], stack = lslice(stack, -2)
-                stack.append(int(b > a))
-            elif tok.value == OP_DROP:
-                stack.pop()
-            elif tok.value == OP_SWAP:
-                [b, a], stack = lslice(stack, -2)
-                stack.append(a)
-                stack.append(b)
-            elif tok.value == OP_DUP:
-                stack.append(stack[-1])
-            elif tok.value == OP_OVER:
-                stack.append(stack[-2])
-            elif tok.value == OP_ROT:
-                last3, stack = lslice(stack, -3)
-                last2, [last] = lslice(last3, -2)
-                last2.append(last)
-                stack.extend(last2)
-            elif tok.value == OP_MEM:
-                stack.append(STR_BUFFER_CAPACITY)
-            elif tok.value == OP_READ:
-                a = stack.pop()
-                stack.append(mem[a])
-            elif tok.value == OP_WRITE:
-                [b, a], stack = lslice(stack, -2)
-                mem[b] = a & 0xff
-            i += 1
-        elif tok.type == TOKEN_KEYWORD:
-            if tok.value == KEYWORD_IF:
-                if stack.pop() == 0:
-                    jump_addr = tok.block.end + 1
-                    if jump_addr < len(tokens) and tokens[jump_addr].value == KEYWORD_ELSE:
-                        i = jump_addr + 1
-                    else:
-                        i = jump_addr
-                else:
-                    i += 1
-            elif tok.value == KEYWORD_ELSE:
-                i = tok.block.end
-            elif tok.value == KEYWORD_DO:
-                i += 1
-            elif tok.value == KEYWORD_WHILE:
-                if stack.pop() == 0:
-                    i += 1
-                else:
-                    i = tok.block.start
-        elif tok.type == TOKEN_SPECIAL_CHAR:
-            i += 1
-        elif tok.type == TOKEN_INTRINSIC:
-            if tok.value == INTRINSIC_PRINT:
-                print(stack.pop())
-            elif tok.value == INTRINSIC_SYSCALL3:
-                [syscall, fd, ptr_string, str_len], stack = lslice(stack, -4)
-                if syscall == 1:
-                    if fd == 0:
-                        assert False, "Not implemented"
-                    elif fd == 1:
-                        buffer = mem[ptr_string:][:str_len]
-                        print(buffer)
-                    elif fd == 2:
-                        assert False, "Not implemented"
-                else:
-                    assert False, "Not Implemented"
-            i += 1
-        elif tok.type == TOKEN_STRING_LITERAL:
-            stack.append(str_buffer_pointer)
-            for c in tok.value:
-                mem[str_buffer_pointer] = c
-                str_buffer_pointer += 1
-            i += 1
-        else:
-            assert False, "unexpected token"
-
-def compile_program(tokens):
+def generate_x86_64_nasm_linux(tokens):
     buffer = "section .text\n" + \
     "global _start\n" + \
     "print:\n" + \
@@ -397,9 +294,7 @@ def compile_program(tokens):
         "section .data\n"
 
     for x, string in enumerate(strings):
-        #string = string.encode('utf-8')
         string = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
-
         buffer += f"str_{x}:\n   db {string}\n"
 
     return buffer
@@ -412,22 +307,31 @@ def run_command(args):
     sys.stdout.write(buf + "\n")
     subprocess.call(args)
 
+def compile_program(tokens, program_file):
+    buffer = generate_x86_64_nasm_linux(tokens)
+    out_filename = program_file.split('.')[0]
+
+    with open(out_filename + ".asm", "w") as out:
+        out.write(buffer)
+
+    run_command(["nasm", "-felf64", out_filename + ".asm"])
+    run_command(["ld", "-o", out_filename, out_filename + ".o"])
+
+    return out_filename
+
 def execute(flag, program_file):
     program = load_file(program_file)
     tokens = list(tokenize_program(program))
     tokens = find_block_end(tokens)
 
     if flag == "-r":
-        run_program(tokens)
+        exec_name = compile_program(tokens, program_file)
+        run_command(["./" + exec_name])
     elif flag == "-c":
-        buffer = compile_program(tokens)
-        out_filename = program_file.split('.')[0]
-        with open(out_filename + ".asm", "w") as out:
-            out.write(buffer)
-
-        run_command(["nasm", "-felf64", out_filename + ".asm"])
-        run_command(["ld", "-o", out_filename, out_filename + ".o"])
-        sys.stdout.write("\n")
+        compile_program(tokens, program_file)
+    else:
+        print(f"Unknown flag {flag}")
+        exit(1)
 
 def main(argv):
     exec_name = argv[0]
