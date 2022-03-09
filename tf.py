@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import sys
 import subprocess
 
@@ -14,6 +15,14 @@ def load_file(file_path):
 macros = {}
 
 def pre_process(src):
+    for i in range(len(src)):
+        line = src[i]
+        if "#include" in line:
+            line = line.split("\n")[0].replace("#include ", "")
+            inc_file_name = os.path.join("include", line.replace('"', ""))
+            with open(inc_file_name, 'r') as inc:
+                src[i] = "".join(inc.readlines())
+
     for i in range(len(src)):
         line = src[i]
         if "#define" in line:
