@@ -40,7 +40,8 @@ def pre_process(src):
             src[i] = src[i].replace(src[i], "\n")
             continue
         for macro_name, tokens in macros.items():
-            if macro_name in line:
+            line = "".join(src[i].split("\n")).split(" ")
+            if line and macro_name in line:
                 src[i] = src[i].replace(macro_name, tokens)
 
     return src
