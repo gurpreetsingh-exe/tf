@@ -17,7 +17,7 @@ include_files = []
 
 def pre_process(src):
     for i in range(len(src)):
-        line = src[i]
+        line = src[i].split("//")[0]
         if "#include" in line:
             line = line.split("\n")[0].replace("#include ", "")
             inc_file_name = os.path.join("include", line.replace('"', ""))
@@ -29,7 +29,7 @@ def pre_process(src):
                 src[i] = "".join(inc.readlines())
 
     for i in range(len(src)):
-        line = src[i]
+        line = src[i].split("//")[0]
         if "#define" in line:
             line = line.replace("#define ", "")
             macro_name = line.split(" ")[0]
