@@ -10,6 +10,7 @@ def __auto(reset=False):
 TOKEN_NUMBER = __auto(True)
 TOKEN_OPEARTOR = __auto()
 TOKEN_KEYWORD = __auto()
+TOKEN_IDENTIFIER = __auto()
 TOKEN_INTRINSIC = __auto()
 TOKEN_SPECIAL_CHAR = __auto()
 TOKEN_STRING_LITERAL = __auto()
@@ -56,12 +57,14 @@ KEYWORD_IF = __auto()
 KEYWORD_ELSE = __auto()
 KEYWORD_DO = __auto()
 KEYWORD_WHILE = __auto()
+KEYWORD_FUNC = __auto()
 
 KEYWORDS = {
     "if": KEYWORD_IF,
     "else": KEYWORD_ELSE,
     "do": KEYWORD_DO,
     "while": KEYWORD_WHILE,
+    "func": KEYWORD_FUNC,
 }
 
 # + ============ +
@@ -82,10 +85,16 @@ INTRINSICS = {
 
 LCURLY = __auto()
 RCURLY = __auto()
+LPAREN = __auto()
+RPAREN = __auto()
 DOUBLE_QUOTE = __auto()
+COMMA = __auto()
 
 SPECIAL_CHARS = {
     '{': LCURLY,
     '}': RCURLY,
-    '"': DOUBLE_QUOTE
+    '(': LPAREN,
+    ')': RPAREN,
+    '"': DOUBLE_QUOTE,
+    ',': COMMA,
 }
