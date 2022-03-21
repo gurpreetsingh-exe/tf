@@ -3,24 +3,25 @@
 import os
 import sys
 import subprocess
+from typing import *
 
 from token_types import *
 from Token import *
 
-def load_file(file_path):
+def load_file(file_path: str) -> List[str]:
     with open(file_path) as f:
-        src = f.readlines()
+        src: List[str] = f.readlines()
         return pre_process(src)
 
-macros = {}
-include_files = []
+macros: Dict[str, str] = {}
+include_files: List[str] = []
 
-def pre_process(src):
+def pre_process(src: List[str]) -> List[str]:
     for i in range(len(src)):
-        line = src[i].split("//")[0]
+        line: str = src[i].split("//")[0]
         if "#include" in line:
             line = line.split("\n")[0].replace("#include ", "")
-            inc_file_name = os.path.join("include", line.replace('"', ""))
+            inc_file_name: str = os.path.join("include", line.replace('"', ""))
             if inc_file_name in include_files:
                 src[i] = "\n"
                 continue
@@ -40,14 +41,14 @@ def pre_process(src):
             src[i] = src[i].replace(src[i], "\n")
             continue
         for macro_name, tokens in macros.items():
-            line = "".join(src[i].split("\n")).split(" ")
-            if line and macro_name in line:
+            ln = "".join(src[i].split("\n")).split(" ")
+            if ln and macro_name in ln:
                 src[i] = src[i].replace(macro_name, tokens)
 
     return src
 
-def parse_num(i, line):
-    num = ''
+def parse_num(i: int, line: str) -> Tuple[int, str]:
+    num: str = ''
 
     while i < len(line) and (not line[i].isspace()):
         num += line[i]
@@ -55,8 +56,8 @@ def parse_num(i, line):
 
     return i, num
 
-def parse_str(i, line):
-    char_buf = ''
+def parse_str(i: int, line: str) -> Tuple[int, str]:
+    char_buf: str = ''
 
     while i < len(line) and line[i].isalnum() and (not line[i].isspace()):
         char_buf += line[i]
@@ -64,8 +65,8 @@ def parse_str(i, line):
 
     return i, char_buf
 
-def parse_string_literal(i, line):
-    str_literal = ""
+def parse_string_literal(i: int, line: str) -> Tuple[int, str]:
+    str_literal: str = ""
 
     while i < len(line) and line[i] != '"':
         str_literal += line[i]
@@ -73,12 +74,12 @@ def parse_string_literal(i, line):
 
     return i, str_literal
 
-def tokenize_program(lines):
+def tokenize_program(lines: List[str]) -> Iterator[Token]:
     for row, line in enumerate(lines):
-        i = 0
+        i: int = 0
         line = ''.join(line.split("//")[0])
         while i < len(line):
-            curr_char = line[i]
+            curr_char: str = line[i]
             if curr_char.isspace():
                 i += 1
                 continue
@@ -99,8 +100,7 @@ def tokenize_program(lines):
                 elif __str in OPS:
                     yield Token(TOKEN_OPEARTOR, OPS[__str], (row + 1, col + 1), __str)
                 else:
-                    sys.stdout.write(f"  [{row + 1}:{col + 1}] unexpected token {__str}\n")
-                    exit(1)
+                    yield Token(TOKEN_IDENTIFIER, __str, (row + 1, col + 1), __str)
             elif curr_char in SPECIAL_CHARS:
                 if curr_char == '"':
                     col = i
@@ -112,8 +112,8 @@ def tokenize_program(lines):
             else:
                 assert False, "Unreachable"
 
-def find_block_end(tokens):
-    stack = []
+def find_block_end(tokens: List[Token]) -> List[Token]:
+    stack: List[Token] = []
     for i, tok in enumerate(tokens):
         if tok.value == KEYWORD_IF:
             stack.append(tok)
@@ -125,6 +125,8 @@ def find_block_end(tokens):
             stack.append(tok)
         elif tok.value == KEYWORD_WHILE:
             tok.block = stack.pop().block
+        elif tok.value == KEYWORD_FUNC:
+            stack.append(tok)
         elif tok.value == RCURLY:
             if stack[-1].value == KEYWORD_DO:
                 continue
@@ -135,8 +137,8 @@ def find_block_end(tokens):
             continue
     return tokens
 
-def generate_x86_64_nasm_linux(tokens):
-    buffer = "section .text\n" + \
+def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
+    buffer: str = "section .text\n" + \
     "global _start\n" + \
     "print:\n" + \
     "    mov r8, -3689348814741910323\n" + \
@@ -173,13 +175,14 @@ def generate_x86_64_nasm_linux(tokens):
     "    ret\n" + \
     "_start:\n"
 
-    strings = []
-    i = 0
+    strings: List[Union[str, bytes, int]] = []
+    identifiers: Dict[Union[str, bytes, int], Token] = {}
+    i: int = 0
     while i < len(tokens):
-        tok = tokens[i]
+        tok: Token = tokens[i]
         if tok.type == TOKEN_NUMBER:
-            buffer += f"    ;; PUSH {tok.value}\n" + \
-                      f"    push {tok.value}\n"
+            buffer += f"    ;; PUSH {str(tok.value)}\n" + \
+                      f"    push {str(tok.value)}\n"
         elif tok.type == TOKEN_OPEARTOR:
             if tok.value == OP_PLUS:
                 buffer += f"    ;; ADD\n" + \
@@ -281,6 +284,16 @@ def generate_x86_64_nasm_linux(tokens):
                           f"    pop rax\n" + \
                           f"    cmp rax, 0\n" + \
                           f"    jne do_{tok.block.start}\n"
+            elif tok.value == KEYWORD_FUNC:
+                next = tokens[i + 1]
+                if next.type == TOKEN_IDENTIFIER:
+                    identifiers[f"{str(next.value)}"] = tok
+                    buffer += f"{str(next.value)}:\n"
+                else:
+                    pass
+        elif tok.type == TOKEN_IDENTIFIER:
+            if tok.value in identifiers and identifiers[tok.value].value == KEYWORD_FUNC:
+                buffer += f"    call {str(tok.value)}\n"
         elif tok.type == TOKEN_SPECIAL_CHAR:
             if tok.value == RCURLY:
                 buffer += f"addr_{i}:\n"
@@ -308,23 +321,24 @@ def generate_x86_64_nasm_linux(tokens):
         "    mem: resb 1024\n" + \
         "section .data\n"
 
-    for x, string in enumerate(strings):
-        string = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
-        buffer += f"str_{x}:\n   db {string}\n"
+    for i, string in enumerate(strings):
+        if isinstance(string, bytes):
+            raw_byte: str = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
+            buffer += f"str_{i}:\n   db {raw_byte}\n"
 
     return buffer
 
-def run_command(args):
-    buf = '>>> '
+def run_command(args: List[str]) -> None:
+    buf: str = '>>> '
     for arg in args:
         buf += arg + " "
 
     sys.stdout.write(buf + "\n")
     subprocess.call(args)
 
-def compile_program(tokens, program_file):
-    buffer = generate_x86_64_nasm_linux(tokens)
-    out_filename = program_file.split('.')[0]
+def compile_program(tokens: List[Token], program_file: str) -> str:
+    buffer: str = generate_x86_64_nasm_linux(tokens)
+    out_filename: str = program_file.split('.')[0]
 
     with open(out_filename + ".asm", "w") as out:
         out.write(buffer)
@@ -334,13 +348,13 @@ def compile_program(tokens, program_file):
 
     return out_filename
 
-def execute(flag, program_file):
-    program = load_file(program_file)
-    tokens = list(tokenize_program(program))
+def execute(flag: str, program_file: str) -> None:
+    program: List[str] = load_file(program_file)
+    tokens: List[Token] = list(tokenize_program(program))
     tokens = find_block_end(tokens)
 
     if flag == "-r":
-        exec_name = compile_program(tokens, program_file)
+        exec_name: str = compile_program(tokens, program_file)
         run_command(["./" + exec_name])
     elif flag == "-c":
         compile_program(tokens, program_file)
@@ -348,8 +362,8 @@ def execute(flag, program_file):
         print(f"Unknown flag {flag}")
         exit(1)
 
-def main(argv):
-    exec_name = argv[0]
+def main(argv: List[str]) -> None:
+    exec_name: str = argv[0]
     argv = argv[1:]
     if len(argv) < 2:
         sys.stdout.write(f"{exec_name}: not enough arguments\n")

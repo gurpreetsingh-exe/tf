@@ -1,5 +1,7 @@
-__counter = 0
-def __auto(reset=False):
+from typing import Dict
+
+__counter: int = 0
+def __auto(reset: bool = False):
     global __counter
     if reset:
         __counter = 0
@@ -7,33 +9,33 @@ def __auto(reset=False):
     __counter += 1
     return __counter
 
-TOKEN_NUMBER = __auto(True)
-TOKEN_OPEARTOR = __auto()
-TOKEN_KEYWORD = __auto()
-TOKEN_IDENTIFIER = __auto()
-TOKEN_INTRINSIC = __auto()
-TOKEN_SPECIAL_CHAR = __auto()
-TOKEN_STRING_LITERAL = __auto()
+TOKEN_NUMBER: int = __auto(True)
+TOKEN_OPEARTOR: int = __auto()
+TOKEN_KEYWORD: int = __auto()
+TOKEN_IDENTIFIER: int = __auto()
+TOKEN_INTRINSIC: int = __auto()
+TOKEN_SPECIAL_CHAR: int = __auto()
+TOKEN_STRING_LITERAL: int = __auto()
 
 # + =========== +
 # |  Operators  |
 # + =========== +
 
-OP_PLUS = __auto()
-OP_MINUS = __auto()
-OP_EQ = __auto()
-OP_LT = __auto()
-OP_GT = __auto()
-OP_DROP = __auto()
-OP_SWAP = __auto()
-OP_DUP = __auto()
-OP_OVER = __auto()
-OP_ROT = __auto()
-OP_MEM = __auto()
-OP_READ = __auto()
-OP_WRITE = __auto()
+OP_PLUS: int = __auto()
+OP_MINUS: int = __auto()
+OP_EQ: int = __auto()
+OP_LT: int = __auto()
+OP_GT: int = __auto()
+OP_DROP: int = __auto()
+OP_SWAP: int = __auto()
+OP_DUP: int = __auto()
+OP_OVER: int = __auto()
+OP_ROT: int = __auto()
+OP_MEM: int = __auto()
+OP_READ: int = __auto()
+OP_WRITE: int = __auto()
 
-OPS = {
+OPS: Dict[str, int] = {
     '+': OP_PLUS,
     '-': OP_MINUS,
     '=': OP_EQ,
@@ -53,13 +55,13 @@ OPS = {
 # |  Keywords  |
 # + ========== +
 
-KEYWORD_IF = __auto()
-KEYWORD_ELSE = __auto()
-KEYWORD_DO = __auto()
-KEYWORD_WHILE = __auto()
-KEYWORD_FUNC = __auto()
+KEYWORD_IF: int = __auto()
+KEYWORD_ELSE: int = __auto()
+KEYWORD_DO: int = __auto()
+KEYWORD_WHILE: int = __auto()
+KEYWORD_FUNC: int = __auto()
 
-KEYWORDS = {
+KEYWORDS: Dict[str, int] = {
     "if": KEYWORD_IF,
     "else": KEYWORD_ELSE,
     "do": KEYWORD_DO,
@@ -71,10 +73,10 @@ KEYWORDS = {
 # |  Intrinsics  |
 # + ============ +
 
-INTRINSIC_PRINT = __auto()
-INTRINSIC_SYSCALL3 = __auto()
+INTRINSIC_PRINT: int = __auto()
+INTRINSIC_SYSCALL3: int = __auto()
 
-INTRINSICS = {
+INTRINSICS: Dict[str, int] = {
     'print': INTRINSIC_PRINT,
     'syscall3': INTRINSIC_SYSCALL3,
 }
@@ -83,14 +85,14 @@ INTRINSICS = {
 # |  Special Characters  |
 # + ==================== +
 
-LCURLY = __auto()
-RCURLY = __auto()
-LPAREN = __auto()
-RPAREN = __auto()
-DOUBLE_QUOTE = __auto()
-COMMA = __auto()
+LCURLY: int = __auto()
+RCURLY: int = __auto()
+LPAREN: int = __auto()
+RPAREN: int = __auto()
+DOUBLE_QUOTE: int = __auto()
+COMMA: int = __auto()
 
-SPECIAL_CHARS = {
+SPECIAL_CHARS: Dict[str, int] = {
     '{': LCURLY,
     '}': RCURLY,
     '(': LPAREN,
