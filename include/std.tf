@@ -1,4 +1,4 @@
-#define strlen dup "\0" swap -
+#define NULL 0
 
 #define STDOUT 1
 

@@ -27,7 +27,8 @@ def pre_process(src: List[str]) -> List[str]:
                 continue
             include_files.append(inc_file_name)
             with open(inc_file_name, 'r') as inc:
-                src[i] = "".join(inc.readlines())
+                src[i] = ""
+                src = inc.readlines() + src
 
     for i in range(len(src)):
         line = src[i].split("//")[0]
