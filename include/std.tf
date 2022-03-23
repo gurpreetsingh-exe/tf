@@ -19,3 +19,8 @@ func strlen(string) {
     } dup string + @ NULL = 0 = while
     mem swap &
 }
+
+func printf(string) {
+    STDOUT string strlen mem @ write
+    drop drop drop
+}
