@@ -59,7 +59,7 @@ def parse_num(i: int, line: str) -> Tuple[int, str]:
 def parse_str(i: int, line: str) -> Tuple[int, str]:
     char_buf: str = ''
 
-    while i < len(line) and line[i].isalnum() and (not line[i].isspace()):
+    while i < len(line) and (line[i].isalnum() or line[i] == "_") and (not line[i].isspace()):
         char_buf += line[i]
         i += 1
 
@@ -74,6 +74,7 @@ def parse_string_literal(i: int, line: str) -> Tuple[int, str]:
 
     return i, str_literal
 
+# TODO: Maybe rewrite this whole parsing function
 def tokenize_program(lines: List[str]) -> Iterator[Token]:
     for row, line in enumerate(lines):
         i: int = 0
@@ -90,6 +91,10 @@ def tokenize_program(lines: List[str]) -> Iterator[Token]:
             elif curr_char in OPS:
                 yield Token(TOKEN_OPEARTOR, OPS[curr_char], (row + 1, i + 1), curr_char)
                 i += 1
+            elif curr_char == "_":
+                col = i
+                i, __str = parse_str(i, line)
+                yield Token(TOKEN_IDENTIFIER, __str, (row + 1, col + 1), __str)
             elif curr_char.isalpha():
                 col = i
                 i, __str = parse_str(i, line)
