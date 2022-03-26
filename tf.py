@@ -68,6 +68,7 @@ instructions_table: List[str] = [
     "    push mem\n",
     "    pop rax\n    xor rbx, rbx\n    mov bl, [rax]\n    push rbx\n",
     "    pop rbx\n    pop rax\n    mov [rax], bl\n",
+    "    pop rax\n    shl rax, 1\n    push rax\n",
 ]
 
 def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
