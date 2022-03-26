@@ -4,6 +4,11 @@
 #define STDOUT 1
 #define STDERR 2
 
+#define << shl
+#define >> shr
+
+// Syscalls
+// TODO: Add all syscalls
 #define SYSCALL_WRITE 1
 
 // Syscall wrapper functions
