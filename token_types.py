@@ -35,6 +35,7 @@ OP_MEM: int = __auto()
 OP_READ: int = __auto()
 OP_WRITE: int = __auto()
 OP_SHL: int = __auto()
+OP_SHR: int = __auto()
 
 OPS: Dict[str, int] = {
     '+': OP_PLUS,
@@ -51,6 +52,7 @@ OPS: Dict[str, int] = {
     '@': OP_READ,
     '&': OP_WRITE,
     'shl': OP_SHL,
+    'shr': OP_SHR,
 }
 
 # + ========== +
