@@ -1,122 +1,12 @@
 #!/usr/bin/python
 
-import os
 import sys
 import subprocess
 from typing import *
 
 from token_types import *
 from Token import *
-
-def load_file(file_path: str) -> List[str]:
-    with open(file_path) as f:
-        src: List[str] = f.readlines()
-        return pre_process(src)
-
-macros: Dict[str, str] = {}
-include_files: List[str] = []
-
-def pre_process(src: List[str]) -> List[str]:
-    for i in range(len(src)):
-        line: str = src[i].split("//")[0]
-        if "#include" in line:
-            line = line.split("\n")[0].replace("#include ", "")
-            inc_file_name: str = os.path.join("include", line.replace('"', ""))
-            if inc_file_name in include_files:
-                src[i] = "\n"
-                continue
-            include_files.append(inc_file_name)
-            with open(inc_file_name, 'r') as inc:
-                src[i] = ""
-                src = inc.readlines() + src
-
-    for i in range(len(src)):
-        line = src[i].split("//")[0]
-        if "#define" in line:
-            line = line.replace("#define ", "")
-            macro_name = line.split(" ")[0]
-            if macro_name in macros:
-                sys.stdout.write(f"macro re-definition at line {i + 1}\n")
-                exit(1)
-            macros[macro_name] = line.replace(macro_name, "").lstrip(" ")
-            src[i] = src[i].replace(src[i], "\n")
-            continue
-        for macro_name, tokens in macros.items():
-            ln = "".join(src[i].split("\n")).split(" ")
-            if ln and macro_name in ln:
-                src[i] = src[i].replace(macro_name, tokens)
-
-    return src
-
-def parse_num(i: int, line: str) -> Tuple[int, str]:
-    num: str = ''
-
-    while i < len(line) and (not line[i].isspace()):
-        num += line[i]
-        i += 1
-
-    return i, num
-
-def parse_str(i: int, line: str) -> Tuple[int, str]:
-    char_buf: str = ''
-
-    while i < len(line) and (line[i].isalnum() or line[i] == "_") and (not line[i].isspace()):
-        char_buf += line[i]
-        i += 1
-
-    return i, char_buf
-
-def parse_string_literal(i: int, line: str) -> Tuple[int, str]:
-    str_literal: str = ""
-
-    while i < len(line) and line[i] != '"':
-        str_literal += line[i]
-        i += 1
-
-    return i, str_literal
-
-# TODO: Maybe rewrite this whole parsing function
-def tokenize_program(lines: List[str]) -> Iterator[Token]:
-    for row, line in enumerate(lines):
-        i: int = 0
-        line = ''.join(line.split("//")[0])
-        while i < len(line):
-            curr_char: str = line[i]
-            if curr_char.isspace():
-                i += 1
-                continue
-            elif curr_char.isdecimal():
-                col = i
-                i, num = parse_num(i, line)
-                yield Token(TOKEN_NUMBER, num, (row + 1, col + 1), num)
-            elif curr_char in OPS:
-                yield Token(TOKEN_OPEARTOR, OPS[curr_char], (row + 1, i + 1), curr_char)
-                i += 1
-            elif curr_char == "_":
-                col = i
-                i, __str = parse_str(i, line)
-                yield Token(TOKEN_IDENTIFIER, __str, (row + 1, col + 1), __str)
-            elif curr_char.isalpha():
-                col = i
-                i, __str = parse_str(i, line)
-                if __str in KEYWORDS:
-                    yield Token(TOKEN_KEYWORD, KEYWORDS[__str], (row + 1, col + 1), __str)
-                elif __str in INTRINSICS:
-                    yield Token(TOKEN_INTRINSIC, INTRINSICS[__str], (row + 1, col + 1), __str)
-                elif __str in OPS:
-                    yield Token(TOKEN_OPEARTOR, OPS[__str], (row + 1, col + 1), __str)
-                else:
-                    yield Token(TOKEN_IDENTIFIER, __str, (row + 1, col + 1), __str)
-            elif curr_char in SPECIAL_CHARS:
-                if curr_char == '"':
-                    col = i
-                    i, __str = parse_string_literal(i + 1, line)
-                    yield Token(TOKEN_STRING_LITERAL, bytes(__str, 'utf-8'), (row + 1, col + 1), __str)
-                else:
-                    yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[curr_char], (row + 1, i + 1), curr_char)
-                i += 1
-            else:
-                assert False, "Unreachable"
+from Parser import Parser
 
 def find_block_end(tokens: List[Token]) -> List[Token]:
     stack: List[Token] = []
@@ -406,8 +296,8 @@ def compile_program(tokens: List[Token], program_file: str) -> str:
     return out_filename
 
 def execute(flag: str, program_file: str) -> None:
-    program: List[str] = load_file(program_file)
-    tokens: List[Token] = list(tokenize_program(program))
+    parser: Parser = Parser(program_file)
+    tokens: List[Token] = list(parser.parse())
     tokens = find_block_end(tokens)
 
     if flag == "-r":
