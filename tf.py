@@ -50,6 +50,26 @@ def find_block_end(tokens: List[Token]) -> List[Token]:
             continue
     return tokens
 
+instructions_table: List[str] = [
+    # Token types
+    "", "", "", "", "", "", "",
+
+    # Operators
+    "    pop rax\n    pop rbx\n    add rax, rbx\n    push rax\n",
+    "    pop rax\n    pop rbx\n    sub rbx, rax\n    push rbx\n",
+    "    pop rax\n    pop rbx\n    mov rcx, 1\n    mov rdx, 0\n    cmp rax, rbx\n    cmove rdx, rcx\n    push rdx\n",
+    "    pop rax\n    pop rbx\n    mov rcx, 1\n    mov rdx, 0\n    cmp rbx, rax\n    cmovl rdx, rcx\n    push rdx\n",
+    "    pop rax\n    pop rbx\n    mov rcx, 1\n    mov rdx, 0\n    cmp rbx, rax\n    cmovg rdx, rcx\n    push rdx\n",
+    "    pop rax\n",
+    "    pop rax\n    pop rbx\n    push rax\n    push rbx\n",
+    "    pop rax\n    push rax\n    push rax\n",
+    "    pop rax\n    pop rbx\n    push rbx\n    push rax\n    push rbx\n",
+    "    pop rax\n    pop rbx\n    pop rcx\n    push rbx\n    push rax\n    push rcx\n",
+    "    push mem\n",
+    "    pop rax\n    xor rbx, rbx\n    mov bl, [rax]\n    push rbx\n",
+    "    pop rbx\n    pop rax\n    mov [rax], bl\n",
+]
+
 def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
     buffer: str = "section .text\n" + \
     "global _start\n" + \
@@ -98,88 +118,7 @@ def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
             buffer += f"    ;; PUSH {str(tok.value)}\n" + \
                       f"    push {str(tok.value)}\n"
         elif tok.type == TOKEN_OPEARTOR:
-            if tok.value == OP_PLUS:
-                buffer += f"    ;; ADD\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    add rax, rbx\n" + \
-                           "    push rax\n"
-            elif tok.value == OP_MINUS:
-                buffer += f"    ;; SUB\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    sub rbx, rax\n" + \
-                           "    push rbx\n"
-            elif tok.value == OP_EQ:
-                buffer += f"    ;; EQ\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    mov rcx, 1\n" + \
-                           "    mov rdx, 0\n" + \
-                           "    cmp rax, rbx\n" + \
-                           "    cmove rdx, rcx\n" + \
-                           "    push rdx\n"
-            elif tok.value == OP_LT:
-                buffer += f"    ;; LT\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    mov rcx, 1\n" + \
-                           "    mov rdx, 0\n" + \
-                           "    cmp rbx, rax\n" + \
-                           "    cmovl rdx, rcx\n" + \
-                           "    push rdx\n"
-            elif tok.value == OP_GT:
-                buffer += f"    ;; GT\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    mov rcx, 1\n" + \
-                           "    mov rdx, 0\n" + \
-                           "    cmp rbx, rax\n" + \
-                           "    cmovg rdx, rcx\n" + \
-                           "    push rdx\n"
-            elif tok.value == OP_DROP:
-                buffer += f"    ;; DROP\n" + \
-                           "    pop rax\n"
-            elif tok.value == OP_SWAP:
-                buffer += f"    ;; SWAP\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    push rax\n" + \
-                           "    push rbx\n"
-            elif tok.value == OP_DUP:
-                buffer += f"    ;; DUP\n" + \
-                           "    pop rax\n" + \
-                           "    push rax\n" + \
-                           "    push rax\n"
-            elif tok.value == OP_OVER:
-                buffer += f"    ;; OVER\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    push rbx\n" + \
-                           "    push rax\n" + \
-                           "    push rbx\n"
-            elif tok.value == OP_ROT:
-                buffer += f"    ;; ROT\n" + \
-                           "    pop rax\n" + \
-                           "    pop rbx\n" + \
-                           "    pop rcx\n" + \
-                           "    push rbx\n" + \
-                           "    push rax\n" + \
-                           "    push rcx\n"
-            elif tok.value == OP_MEM:
-                buffer += f"    ;; MEM\n" + \
-                           "    push mem\n"
-            elif tok.value == OP_READ:
-                buffer += f"    ;; READ\n" + \
-                           "    pop rax\n" + \
-                           "    xor rbx, rbx\n" + \
-                           "    mov bl, [rax]\n" + \
-                           "    push rbx\n"
-            elif tok.value == OP_WRITE:
-                buffer += f"    ;; WRITE\n" + \
-                           "    pop rbx\n" + \
-                           "    pop rax\n" + \
-                           "    mov [rax], bl\n"
+            buffer += instructions_table[tok.value]
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 buffer += f"    ;; IF\n" + \
