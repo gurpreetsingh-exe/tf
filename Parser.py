@@ -124,7 +124,7 @@ class Parser:
                 if macro_name in self.macros:
                     sys.stdout.write(f"macro re-definition at line {i + 1}\n")
                     exit(1)
-                self.macros[macro_name] = line.replace(macro_name, "").lstrip(" ")
+                self.macros[macro_name] = line.replace(macro_name, "").replace("\n", "").lstrip(" ")
                 src[i] = src[i].replace(src[i], "\n")
                 continue
             for macro_name, tokens in self.macros.items():
