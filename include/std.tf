@@ -340,7 +340,7 @@
 #define SYSCALL_PKEY_MPROTECT 329
 #define SYSCALL_PKEY_ALLOC 330
 #define SYSCALL_PKEY_FREE 331
-#define SYSCALL_STAT 332
+#define SYSCALL_STATX 332
 
 // Syscall wrapper functions
 func write(fd, buf, size) {
