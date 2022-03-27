@@ -37,6 +37,7 @@ OP_WRITE: int = __auto()
 OP_SHL: int = __auto()
 OP_SHR: int = __auto()
 OP_READ64: int = __auto()
+OP_WRITE64: int = __auto()
 
 OPS: Dict[str, int] = {
     '+': OP_PLUS,
@@ -55,6 +56,7 @@ OPS: Dict[str, int] = {
     'shl': OP_SHL,
     'shr': OP_SHR,
     'read64': OP_READ64,
+    'write64': OP_WRITE64,
 }
 
 # + ========== +

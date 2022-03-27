@@ -70,7 +70,8 @@ op_table: List[str] = [
     "    pop rbx\n    pop rax\n    mov [rax], bl\n",
     "    pop rcx\n    pop rax\n    shl rax, cl\n    push rax\n",
     "    pop rcx\n    pop rax\n    shr rax, cl\n    push rax\n",
-    "    pop rax\n    xor rbx, rbx\n    mov rbx, [rax]\n    push rbx\n"
+    "    pop rax\n    xor rbx, rbx\n    mov rbx, [rax]\n    push rbx\n",
+    "    pop rbx\n    pop rax\n    mov [rax], rbx\n",
 ]
 
 syscall_table: List[str] = [
@@ -198,7 +199,7 @@ def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
                 buffer += f"    pop rdi\n" + \
                            "    call print\n"
             else:
-                buffer += syscall_table[tok.value - 29]
+                buffer += syscall_table[tok.value - 30]
         elif tok.type == TOKEN_STRING_LITERAL:
             buffer += f"    ;; STRING\n" + \
                       f"    push str_{len(strings)}\n"
