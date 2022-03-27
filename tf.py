@@ -50,7 +50,7 @@ def find_block_end(tokens: List[Token]) -> List[Token]:
             continue
     return tokens
 
-instructions_table: List[str] = [
+op_table: List[str] = [
     # Token types
     "", "", "", "", "", "", "",
 
@@ -70,6 +70,15 @@ instructions_table: List[str] = [
     "    pop rbx\n    pop rax\n    mov [rax], bl\n",
     "    pop rcx\n    pop rax\n    shl rax, cl\n    push rax\n",
     "    pop rcx\n    pop rax\n    shr rax, cl\n    push rax\n",
+]
+
+syscall_table: List[str] = [
+    "    pop rdi\n    pop rax\n    syscall\n",
+    "    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
+    "    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
+    "    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
+    "    pop r8\n    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
+    "    pop r9\n    pop r8\n    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
 ]
 
 def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
@@ -120,7 +129,7 @@ def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
             buffer += f"    ;; PUSH {str(tok.value)}\n" + \
                       f"    push {str(tok.value)}\n"
         elif tok.type == TOKEN_OPEARTOR:
-            buffer += instructions_table[tok.value]
+            buffer += op_table[tok.value]
         elif tok.type == TOKEN_KEYWORD:
             if tok.value == KEYWORD_IF:
                 buffer += f"    ;; IF\n" + \
@@ -187,13 +196,8 @@ def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
             if tok.value == INTRINSIC_PRINT:
                 buffer += f"    pop rdi\n" + \
                            "    call print\n"
-            elif tok.value == INTRINSIC_SYSCALL3:
-                buffer += f"    ;; SYSCALL 3\n" + \
-                           "    pop rdx\n" + \
-                           "    pop rsi\n" + \
-                           "    pop rdi\n" + \
-                           "    pop rax\n" + \
-                           "    syscall\n"
+            else:
+                buffer += syscall_table[tok.value - 28]
         elif tok.type == TOKEN_STRING_LITERAL:
             buffer += f"    ;; STRING\n" + \
                       f"    push str_{len(strings)}\n"

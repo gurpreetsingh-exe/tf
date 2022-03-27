@@ -78,11 +78,21 @@ KEYWORDS: Dict[str, int] = {
 # + ============ +
 
 INTRINSIC_PRINT: int = __auto()
+INTRINSIC_SYSCALL1: int = __auto()
+INTRINSIC_SYSCALL2: int = __auto()
 INTRINSIC_SYSCALL3: int = __auto()
+INTRINSIC_SYSCALL4: int = __auto()
+INTRINSIC_SYSCALL5: int = __auto()
+INTRINSIC_SYSCALL6: int = __auto()
 
 INTRINSICS: Dict[str, int] = {
     'print': INTRINSIC_PRINT,
+    'syscall1': INTRINSIC_SYSCALL1,
+    'syscall2': INTRINSIC_SYSCALL2,
     'syscall3': INTRINSIC_SYSCALL3,
+    'syscall4': INTRINSIC_SYSCALL4,
+    'syscall5': INTRINSIC_SYSCALL5,
+    'syscall6': INTRINSIC_SYSCALL6,
 }
 
 # + ==================== +
