@@ -41,6 +41,7 @@ OP_WRITE64: int = __auto()
 OP_DIVMOD: int = __auto()
 OP_AND: int = __auto()
 OP_OR: int = __auto()
+OP_MUL: int = __auto()
 
 OPS: Dict[str, int] = {
     '+': OP_PLUS,
@@ -63,6 +64,7 @@ OPS: Dict[str, int] = {
     'divmod': OP_DIVMOD,
     'and': OP_AND,
     'or': OP_OR,
+    'mul': OP_MUL,
 }
 
 # + ========== +
