@@ -22,7 +22,7 @@ class BinaryKind(Enum):
     OR = auto()
     EQ = auto()
 
-BinaryOps: Dict[TokenKind, str] = {
+BinaryOps = {
     TokenKind.PLUS       : BinaryKind.ADD,
     TokenKind.MINUS      : BinaryKind.SUB,
     TokenKind.STAR       : BinaryKind.MUL,

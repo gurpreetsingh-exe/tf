@@ -2,14 +2,13 @@
 
 import sys
 import subprocess
-from typing import *
 
 from token_types import *
 from Token import *
 from Lexer import Lexer
 from Parser import Parser
 
-op_table: List[str] = [
+op_table = [
     # Token types
     "", "", "", "", "", "", "",
 
@@ -37,7 +36,7 @@ op_table: List[str] = [
     "    pop rbx\n    pop rax\n    mul rbx\n    push rax\n",
 ]
 
-syscall_table: List[str] = [
+syscall_table = [
     "    pop rdi\n    pop rax\n    syscall\n",
     "    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
     "    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
@@ -46,8 +45,8 @@ syscall_table: List[str] = [
     "    pop r9\n    pop r8\n    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
 ]
 
-def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
-    buffer: str = "section .text\n" + \
+def generate_x86_64_nasm_linux(tokens):
+    buffer = "section .text\n" + \
     "global _start\n" + \
     "print:\n" + \
     "    mov r8, -3689348814741910323\n" + \
@@ -83,13 +82,13 @@ def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
     "    add rsp, 40\n" + \
     "    ret\n"
 
-    strings: List[Union[str, bytes, int]] = []
-    identifiers: Dict[Union[str, bytes, int], Token] = {}
-    local_vars: Dict[str, Dict[str, Union[int, str]]] = {}
-    scope: str = "global"
-    i: int = 0
+    strings = []
+    identifiers = {}
+    local_vars = {}
+    scope = "global"
+    i = 0
     while i < len(tokens):
-        tok: Token = tokens[i]
+        tok = tokens[i]
         if tok.type == TOKEN_NUMBER:
             buffer += f"    ;; PUSH {str(tok.value)}\n" + \
                       f"    push {str(tok.value)}\n"
@@ -122,7 +121,7 @@ def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
                     buffer += f"{str(next.value)}:\n" + \
                               f"    push rbp\n" + \
                               f"    mov rbp, rsp\n"
-                    arg_pass: int = 0
+                    arg_pass = 0
                     if tokens[i + 1].value != LPAREN:
                         sys.stdout.write("Expected ( after function name\n")
                         exit(1)
@@ -185,17 +184,17 @@ def generate_x86_64_nasm_linux(tokens: List[Token]) -> str:
 
     return buffer
 
-def run_command(args: List[str]) -> None:
-    buf: str = '>>> '
+def run_command(args):
+    buf = '>>> '
     for arg in args:
         buf += arg + " "
 
     sys.stdout.write(buf + "\n")
     subprocess.call(args)
 
-def compile_program(tokens: List[Token], program_file: str) -> str:
-    buffer: str = generate_x86_64_nasm_linux(tokens)
-    out_filename: str = program_file.split('.')[0]
+def compile_program(tokens, program_file):
+    buffer = generate_x86_64_nasm_linux(tokens)
+    out_filename = program_file.split('.')[0]
 
     with open(out_filename + ".asm", "w") as out:
         out.write(buffer)
@@ -205,9 +204,9 @@ def compile_program(tokens: List[Token], program_file: str) -> str:
 
     return out_filename
 
-def execute(flag: str, program_file: str) -> None:
-    lexer: Lexer = Lexer(program_file)
-    tokens: List[Token] = list(lexer.lex())
+def execute(flag, program_file):
+    lexer = Lexer(program_file)
+    tokens = list(lexer.lex())
     parser = Parser(program_file, tokens)
     ir = list(parser.parse())
     for a in ir:
@@ -216,7 +215,7 @@ def execute(flag: str, program_file: str) -> None:
     tokens = find_block_end(tokens)
 
     if flag == "-r":
-        exec_name: str = compile_program(tokens, program_file)
+        exec_name = compile_program(tokens, program_file)
         run_command(["./" + exec_name])
     elif flag == "-c":
         compile_program(tokens, program_file)
@@ -224,8 +223,8 @@ def execute(flag: str, program_file: str) -> None:
         print(f"Unknown flag {flag}")
         exit(1)
 
-def main(argv: List[str]) -> None:
-    exec_name: str = argv[0]
+def main(argv):
+    exec_name = argv[0]
     argv = argv[1:]
     if len(argv) < 2:
         sys.stdout.write(f"{exec_name}: not enough arguments\n")

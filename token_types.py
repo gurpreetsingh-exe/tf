@@ -1,4 +1,3 @@
-from typing import Dict
 from enum import Enum, auto
 
 class Repr:
@@ -11,8 +10,8 @@ class Literal_(Repr):
         self.value = value
 
 class LiteralKind(Enum):
-    STR: int = auto()
-    INT: int = auto()
+    STR = auto()
+    INT = auto()
 
 class IntrinsicKind(Enum):
     DROP = auto()
@@ -36,7 +35,7 @@ class IntrinsicKind(Enum):
     SYSCALL5 = auto()
     SYSCALL6 = auto()
 
-Intrinsics: Dict[str, IntrinsicKind] = {
+Intrinsics = {
     "drop"    : IntrinsicKind.DROP,
     "swap"    : IntrinsicKind.SWAP,
     "dup"     : IntrinsicKind.DUP,
@@ -63,15 +62,15 @@ class Intrinsic(Repr):
         self.value = value
 
 class TokenKind(Enum):
-    LITERAL: int = auto()
-    INTRINSIC: int = auto()
-    IDENT: int = auto()
+    LITERAL     = auto()
+    INTRINSIC   = auto()
+    IDENT       = auto()
 
-    FUNC: int = auto()
-    IF: int = auto()
-    ELSE: int = auto()
-    DO: int = auto()
-    WHILE: int = auto()
+    FUNC        = auto()
+    IF          = auto()
+    ELSE        = auto()
+    DO          = auto()
+    WHILE       = auto()
 
     PLUS        = auto()  # `+`
     MINUS       = auto()  # `-`
@@ -93,16 +92,16 @@ class TokenKind(Enum):
     AMPERSAND   = auto()  # `&`
     PIPE        = auto()  # `|`
 
-    LT2        = auto()  # `<<`
-    GT2        = auto()  # `>>`
-    PIPE2      = auto()  # `||`
-    AMPERSAND2 = auto()  # `&&`
-    EQ2        = auto()  # `==`
+    LT2         = auto()  # `<<`
+    GT2         = auto()  # `>>`
+    PIPE2       = auto()  # `||`
+    AMPERSAND2  = auto()  # `&&`
+    EQ2         = auto()  # `==`
 
     EOF         = auto()
     UNDEFINED   = auto()
 
-Keywords: Dict[str, TokenKind] = {
+Keywords = {
     "if"   : TokenKind.IF,
     "else" : TokenKind.ELSE,
     "do"   : TokenKind.DO,
@@ -110,26 +109,26 @@ Keywords: Dict[str, TokenKind] = {
     "func" : TokenKind.FUNC,
 }
 
-Punctuators: Dict[str, TokenKind] = {
-    '+': TokenKind.PLUS,
-    '-': TokenKind.MINUS,
-    '*': TokenKind.STAR,
-    '/': TokenKind.SLASH,
-    '=': TokenKind.EQ,
-    ';': TokenKind.SEMI,
-    '<': TokenKind.LT,
-    '>': TokenKind.GT,
-    ':': TokenKind.COLON,
-    '(': TokenKind.LPAREN,
-    ')': TokenKind.RPAREN,
-    '{': TokenKind.LCURLY,
-    '}': TokenKind.RCURLY,
-    ',': TokenKind.COMMA,
-    '"': TokenKind.DOUBLEQUOTE,
-    '#': TokenKind.POUND,
-    '@': TokenKind.AT,
-    '&': TokenKind.AMPERSAND,
-    '|': TokenKind.PIPE,
+Punctuators = {
+    '+' : TokenKind.PLUS,
+    '-' : TokenKind.MINUS,
+    '*' : TokenKind.STAR,
+    '/' : TokenKind.SLASH,
+    '=' : TokenKind.EQ,
+    ';' : TokenKind.SEMI,
+    '<' : TokenKind.LT,
+    '>' : TokenKind.GT,
+    ':' : TokenKind.COLON,
+    '(' : TokenKind.LPAREN,
+    ')' : TokenKind.RPAREN,
+    '{' : TokenKind.LCURLY,
+    '}' : TokenKind.RCURLY,
+    ',' : TokenKind.COMMA,
+    '"' : TokenKind.DOUBLEQUOTE,
+    '#' : TokenKind.POUND,
+    '@' : TokenKind.AT,
+    '&' : TokenKind.AMPERSAND,
+    '|' : TokenKind.PIPE,
     '<<': TokenKind.LT2,
     '>>': TokenKind.GT2,
     '&&': TokenKind.AMPERSAND2,

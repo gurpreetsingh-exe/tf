@@ -1,22 +1,20 @@
-from typing import Tuple, Union
-
 class Block:
-    def __init__(self, start: Union[int, None] = None, end: Union[int, None] = None) -> None:
+    def __init__(self, start = None, end = None):
         self.set(start, end)
 
-    def set(self, start: Union[int, None], end: Union[int, None]) -> None:
-        self.start: Union[int, None] = start
-        self.end: Union[int, None] = end
+    def set(self, start, end):
+        self.start = start
+        self.end = end
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return f"[s: {self.start}, e: {self.end}]"
 
 class Token:
-    def __init__(self, typ: int, value: Union[str, bytes, int], loc: Tuple[int, int]) -> None:
-        self.typ: int = typ
-        self.value: Union[str, bytes, int] = value
-        self.loc: Tuple[int, int] = (loc[0], loc[1] + 1)
-        self.raw: str = str(self.value)
+    def __init__(self, typ, value, loc):
+        self.typ = typ
+        self.value = value
+        self.loc = (loc[0], loc[1] + 1)
+        self.raw = str(self.value)
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return f"[{str(self.loc[0])}, {str(self.loc[1])}]\t {str(self.typ).ljust(10)}\t=> `{str(self.value)}`"
