@@ -6,44 +6,111 @@ import subprocess
 from token_types import *
 from Token import *
 from Lexer import Lexer
-from Parser import Parser
+from Parser import BinaryKind, IRKind, Parser
 
-op_table = [
-    # Token types
-    "", "", "", "", "", "", "",
+def generate_binary_op(op):
+    match op[1]:
+        case BinaryKind.ADD:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    add rax, rbx\n" + \
+            "    push rax\n"
+        case BinaryKind.SUB:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    sub rax, rbx\n" + \
+            "    push rax\n"
+        case BinaryKind.MUL:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    mul rbx\n" + \
+            "    push rax\n"
+        case BinaryKind.DIV:
+            return \
+            "    pop rbx\n" + \
+            "    pop rax\n" + \
+            "    div rbx\n" + \
+            "    push rax\n"
+        case BinaryKind.LT:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    cmp rax, rbx\n" + \
+            "    setl al\n" + \
+            "    push rax\n"
+        case BinaryKind.GT:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    cmp rax, rbx\n" + \
+            "    setg al\n" + \
+            "    push rax\n"
+        case BinaryKind.SHL:
+            return \
+            "    pop rcx\n" + \
+            "    pop rax\n" + \
+            "    sal rax, cl\n" + \
+            "    push rax\n"
+        case BinaryKind.SHR:
+            return \
+            "    pop rcx\n" + \
+            "    pop rax\n" + \
+            "    sar rax, cl\n" + \
+            "    push rax\n"
+        case BinaryKind.AND:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    test rax, rax\n" + \
+            "    setne al\n" + \
+            "    test rbx, rbx\n" + \
+            "    setne bl\n" + \
+            "    and rax, rbx\n" + \
+            "    push rax\n"
+        case BinaryKind.OR:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    test rax, rax\n" + \
+            "    setne al\n" + \
+            "    test rbx, rbx\n" + \
+            "    setne bl\n" + \
+            "    or rax, rbx\n" + \
+            "    push rax\n"
+        case BinaryKind.EQ:
+            return \
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    cmp rax, rbx\n" + \
+            "    sete al\n" + \
+            "    push rax\n"
 
-    # Operators
-    "    pop rax\n    pop rbx\n    add rax, rbx\n    push rax\n",
-    "    pop rax\n    pop rbx\n    sub rbx, rax\n    push rbx\n",
-    "    pop rax\n    pop rbx\n    mov rcx, 1\n    mov rdx, 0\n    cmp rax, rbx\n    cmove rdx, rcx\n    push rdx\n",
-    "    pop rax\n    pop rbx\n    mov rcx, 1\n    mov rdx, 0\n    cmp rbx, rax\n    cmovl rdx, rcx\n    push rdx\n",
-    "    pop rax\n    pop rbx\n    mov rcx, 1\n    mov rdx, 0\n    cmp rbx, rax\n    cmovg rdx, rcx\n    push rdx\n",
-    "    pop rax\n",
-    "    pop rax\n    pop rbx\n    push rax\n    push rbx\n",
-    "    pop rax\n    push rax\n    push rax\n",
-    "    pop rax\n    pop rbx\n    push rbx\n    push rax\n    push rbx\n",
-    "    pop rax\n    pop rbx\n    pop rcx\n    push rbx\n    push rax\n    push rcx\n",
-    "    push mem\n",
-    "    pop rax\n    xor rbx, rbx\n    mov bl, [rax]\n    push rbx\n",
-    "    pop rbx\n    pop rax\n    mov [rax], bl\n",
-    "    pop rcx\n    pop rax\n    shl rax, cl\n    push rax\n",
-    "    pop rcx\n    pop rax\n    shr rax, cl\n    push rax\n",
-    "    pop rax\n    xor rbx, rbx\n    mov rbx, [rax]\n    push rbx\n",
-    "    pop rbx\n    pop rax\n    mov [rax], rbx\n",
-    "    pop rbx\n    pop rax\n    xor rdx, rdx\n    div rbx\n    push rax\n    push rdx\n",
-    "    pop rax\n    pop rbx\n    and rax, rbx\n    push rax\n",
-    "    pop rax\n    pop rbx\n    or rax, rbx\n    push rax\n",
-    "    pop rbx\n    pop rax\n    mul rbx\n    push rax\n",
-]
-
-syscall_table = [
-    "    pop rdi\n    pop rax\n    syscall\n",
-    "    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
-    "    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
-    "    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
-    "    pop r8\n    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
-    "    pop r9\n    pop r8\n    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
-]
+def generate_body(ir):
+    buffer = ""
+    i = 0
+    strings = []
+    while i < len(ir):
+        op = ir[i]
+        if op[0] == IRKind.PushInt:
+            buffer += f"    push {str(op[1])}\n"
+        elif op[0] == IRKind.PushStr:
+            buffer += f"    push S{len(strings)}\n"
+            strings.append(op[1])
+        elif op[0] == IRKind.Binary:
+            buffer += generate_binary_op(op)
+        elif op[0] == IRKind.Func:
+            buffer += f"{op[1]}:\n" + \
+                "    push rbp\n" + \
+                "    mov rbp, rsp\n"
+            buf, strs = generate_body(op[3])
+            buffer += buf
+            strings += strs
+            buffer += "    pop rbp\n    ret\n"
+        i += 1
+    return buffer, strings
 
 def generate_x86_64_nasm_linux(ir):
     buffer = "section .text\n" + \
@@ -82,95 +149,10 @@ def generate_x86_64_nasm_linux(ir):
     "    add rsp, 40\n" + \
     "    ret\n"
 
-    strings = []
-    identifiers = {}
-    local_vars = {}
-    scope = "global"
-    i = 0
-    tokens = []
-    while i < len(tokens):
-        tok = tokens[i]
-        if tok.type == TOKEN_NUMBER:
-            buffer += f"    ;; PUSH {str(tok.value)}\n" + \
-                      f"    push {str(tok.value)}\n"
-        elif tok.type == TOKEN_OPEARTOR:
-            buffer += op_table[tok.value]
-        elif tok.type == TOKEN_KEYWORD:
-            if tok.value == KEYWORD_IF:
-                buffer += f"    ;; IF\n" + \
-                          f"    pop rax\n" + \
-                          f"    cmp rax, 0\n" + \
-                          f"    je addr_{tok.block.end}\n"
-            elif tok.value == KEYWORD_ELSE:
-                buffer += f"    ;; ELSE\n" + \
-                          f"    jmp addr_{tok.block.end}\n" + \
-                          f"addr_{i}:\n"
-            elif tok.value == KEYWORD_DO:
-                buffer += f"    ;; DO\n" + \
-                          f"do_{i}:\n"
-            elif tok.value == KEYWORD_WHILE:
-                buffer += f"    ;; WHILE\n" + \
-                          f"    pop rax\n" + \
-                          f"    cmp rax, 0\n" + \
-                          f"    jne do_{tok.block.start}\n"
-            elif tok.value == KEYWORD_FUNC:
-                next = tokens[i + 1]
-                if next.type == TOKEN_IDENTIFIER:
-                    identifiers[f"{str(next.value)}"] = tok
-                    scope = str(next.value)
-                    i += 1
-                    buffer += f"{str(next.value)}:\n" + \
-                              f"    push rbp\n" + \
-                              f"    mov rbp, rsp\n"
-                    arg_pass = 0
-                    if tokens[i + 1].value != LPAREN:
-                        sys.stdout.write("Expected ( after function name\n")
-                        exit(1)
-                    i += 1
-                    local_vars[str(next.value)] = {}
-                    while arg_pass < next.args:
-                        i += 1
-                        if tokens[i].type != TOKEN_IDENTIFIER:
-                            sys.stdout.write("Expected name\n")
-                            exit(1)
-                        var_name = str(tokens[i].value)
-                        local_vars[next.value][var_name] = next.args - arg_pass - 1
-                        i += 1
-                        if tokens[i].value not in {COMMA, RPAREN}:
-                            assert False, "Expected `,` or `}`"
-                        arg_pass += 1
-                    i += 1
-                else:
-                    sys.stdout.write("Expected function name\n")
-                    exit(1)
-        elif tok.type == TOKEN_IDENTIFIER:
-            if tok.value in identifiers and identifiers[tok.value].value == KEYWORD_FUNC:
-                buffer += f"    call {str(tok.value)}\n"
-            else:
-                if scope in local_vars:
-                    buffer += f"    mov rax, [rbp + {8 * local_vars[scope][str(tok.value)] + 16}]\n" + \
-                               "    push rax\n"
-        elif tok.type == TOKEN_SPECIAL_CHAR:
-            if tok.value == RCURLY:
-                if tok.block.start is not None and tokens[tok.block.start].value == KEYWORD_FUNC:
-                    buffer += f"    pop rbp\n" + \
-                              f"    ret\n"
-                else:
-                    buffer += f"addr_{i}:\n"
-        elif tok.type == TOKEN_INTRINSIC:
-            if tok.value == INTRINSIC_PRINT:
-                buffer += f"    pop rdi\n" + \
-                           "    call print\n"
-            else:
-                buffer += syscall_table[tok.value - 34]
-        elif tok.type == TOKEN_STRING_LITERAL:
-            buffer += f"    ;; STRING\n" + \
-                      f"    push str_{len(strings)}\n"
-            strings.append(tok.value)
-        i += 1
+    buf, strings = generate_body(ir)
+    buffer += buf
     buffer += "_start:\n" + \
         "    call main\n" + \
-        "    ;; RET\n" + \
         "    mov rax, 60\n" + \
         "    mov rdi, 0\n" + \
         "    syscall\n\n" + \
@@ -181,7 +163,7 @@ def generate_x86_64_nasm_linux(ir):
     for i, string in enumerate(strings):
         if isinstance(string, bytes):
             raw_byte: str = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
-            buffer += f"str_{i}:\n   db {raw_byte}\n"
+            buffer += f"S{i}:\n   db {raw_byte}\n"
 
     return buffer
 
