@@ -2,9 +2,9 @@ import os
 import sys
 from typing import *
 from token_types import *
-from Token import Token
+from Token import Literal_, Token
 
-class Parser:
+class Lexer:
     def __init__(self, program_file: str) -> None:
         self.program_file: str = program_file
 
@@ -61,7 +61,9 @@ class Parser:
 
             elif self.curr_char.isdigit():
                 word = self.parse_word(lambda self: self.curr_char.isdigit())
-                yield Token(TOKEN_NUMBER, word, loc)
+                lit = Literal_(LiteralKind.INT, word)
+                yield Token(TokenKind.LITERAL, lit, loc)
+
             elif self.curr_char.isalpha() or self.curr_char == "_":
                 word = self.parse_word(lambda self: self.curr_char.isalnum() or self.curr_char == "_")
 
@@ -86,7 +88,8 @@ class Parser:
                         buffer += self.curr_char
                         self.advance()
                     self.advance()
-                    yield Token(TOKEN_STRING_LITERAL, bytes(buffer, 'utf-8'), loc)
+                    lit = Literal_(LiteralKind.STR, bytes(buffer, 'utf-8'))
+                    yield Token(TokenKind.LITERAL, lit, loc)
                 else:
                     yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[self.curr_char], loc)
                     self.advance()
