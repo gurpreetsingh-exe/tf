@@ -110,6 +110,9 @@ class Lexer:
             else:
                 assert False, "unreachable"
 
+    # TODO: This is sus, need a better system
+    # Maybe after IR is implemented it would be
+    # nice to refactor macros and includes as well
     def pre_process(self, src: List[str]) -> str:
         for i in range(len(src)):
             line: str = src[i].split("//")[0]

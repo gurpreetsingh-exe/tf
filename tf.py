@@ -7,6 +7,7 @@ from typing import *
 from token_types import *
 from Token import *
 from Lexer import Lexer
+from Parser import Parser
 
 def find_block_end(tokens: List[Token]) -> List[Token]:
     stack: List[Token] = []
@@ -249,8 +250,8 @@ def compile_program(tokens: List[Token], program_file: str) -> str:
 def execute(flag: str, program_file: str) -> None:
     lexer: Lexer = Lexer(program_file)
     tokens: List[Token] = list(lexer.lex())
-    for tok in tokens:
-        print(tok)
+    parser = Parser(program_file, tokens)
+    parser.parse()
     exit(0)
     tokens = find_block_end(tokens)
 
