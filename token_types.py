@@ -48,6 +48,11 @@ Intrinsics: Dict[str, IntrinsicKind] = {
     "syscall6": IntrinsicKind.SYSCALL6,
 }
 
+class Intrinsic:
+    def __init__(self, typ, value) -> None:
+        self.typ = typ
+        self.value = value
+
 class TokenKind(Enum):
     LITERAL: int = auto()
     INTRINSIC: int = auto()

@@ -43,7 +43,7 @@ class Lexer:
         else:
             return (self.line + 1, self.col,)
 
-    def parse_word(self, method) -> str:
+    def lex_word(self, method) -> str:
         buffer: str = ''
 
         while self.curr_char != None and method(self) and (not self.curr_char.isspace()):
@@ -52,7 +52,7 @@ class Lexer:
 
         return buffer
 
-    def parse(self) -> Iterator[Token]:
+    def lex(self) -> Iterator[Token]:
         while self.curr_char != None:
             loc: Tuple[int, int] = self.get_loc()[:]
             if self.curr_char.isspace():
@@ -60,27 +60,22 @@ class Lexer:
                 continue
 
             elif self.curr_char.isdigit():
-                word = self.parse_word(lambda self: self.curr_char.isdigit())
+                word = self.lex_word(lambda self: self.curr_char.isdigit())
                 lit = Literal_(LiteralKind.INT, word)
                 yield Token(TokenKind.LITERAL, lit, loc)
 
             elif self.curr_char.isalpha() or self.curr_char == "_":
-                word = self.parse_word(lambda self: self.curr_char.isalnum() or self.curr_char == "_")
+                word = self.lex_word(lambda self: self.curr_char.isalnum() or self.curr_char == "_")
 
-                if word in OPS:
-                    yield Token(TOKEN_OPEARTOR, OPS[word], loc)
-                elif word in KEYWORDS:
-                    yield Token(TOKEN_KEYWORD, KEYWORDS[word], loc)
-                elif word in INTRINSICS:
-                    yield Token(TOKEN_INTRINSIC, INTRINSICS[word], loc)
+                if word in Keywords:
+                    yield Token(Keywords[word], word, loc)
+                elif word in Intrinsics:
+                    intrinsic = Intrinsic(Intrinsics[word], word)
+                    yield Token(TokenKind.INTRINSIC, intrinsic, loc)
                 else:
-                    yield Token(TOKEN_IDENTIFIER, word, loc)
+                    yield Token(TokenKind.IDENT, word, loc)
 
-            elif self.curr_char in OPS:
-                yield Token(TOKEN_OPEARTOR, OPS[self.curr_char], loc)
-                self.advance()
-
-            elif self.curr_char in SPECIAL_CHARS:
+            elif self.curr_char in Punctuators:
                 if self.curr_char == '"':
                     buffer = ""
                     self.advance()
@@ -90,9 +85,21 @@ class Lexer:
                     self.advance()
                     lit = Literal_(LiteralKind.STR, bytes(buffer, 'utf-8'))
                     yield Token(TokenKind.LITERAL, lit, loc)
-                else:
-                    yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[self.curr_char], loc)
+                    continue
+
+                prev = self.curr_char
+                self.advance()
+                compound = prev + self.curr_char
+                if compound == "//":
+                    while self.curr_char != "\n":
+                        self.advance()
+                    continue
+
+                if compound in Punctuators:
+                    yield Token(Punctuators[compound], compound, loc)
                     self.advance()
+                else:
+                    yield Token(Punctuators[prev], prev, loc)
 
             elif self.curr_char == "/":
                 self.eat('/')

@@ -248,7 +248,7 @@ def compile_program(tokens: List[Token], program_file: str) -> str:
 
 def execute(flag: str, program_file: str) -> None:
     lexer: Lexer = Lexer(program_file)
-    tokens: List[Token] = list(lexer.parse())
+    tokens: List[Token] = list(lexer.lex())
     for tok in tokens:
         print(tok)
     exit(0)
