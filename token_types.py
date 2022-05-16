@@ -97,6 +97,7 @@ class TokenKind(Enum):
     GT2        = auto()  # `>>`
     PIPE2      = auto()  # `||`
     AMPERSAND2 = auto()  # `&&`
+    EQ2        = auto()  # `==`
 
     EOF         = auto()
     UNDEFINED   = auto()
@@ -133,4 +134,5 @@ Punctuators: Dict[str, TokenKind] = {
     '>>': TokenKind.GT2,
     '&&': TokenKind.AMPERSAND2,
     '||': TokenKind.PIPE2,
+    '==': TokenKind.EQ2,
 }

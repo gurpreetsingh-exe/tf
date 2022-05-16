@@ -9,48 +9,6 @@ from Token import *
 from Lexer import Lexer
 from Parser import Parser
 
-def find_block_end(tokens: List[Token]) -> List[Token]:
-    stack: List[Token] = []
-    for i, tok in enumerate(tokens):
-        if tok.value == KEYWORD_IF:
-            stack.append(tok)
-        elif tok.value == KEYWORD_ELSE:
-            stack.pop().block.end = i
-            stack.append(tok)
-        elif tok.value == KEYWORD_DO:
-            tok.block = Block(i, None)
-            stack.append(tok)
-        elif tok.value == KEYWORD_WHILE:
-            tok.block = stack.pop().block
-        elif tok.value == KEYWORD_FUNC:
-            tok.block = Block(i, None)
-            stack.append(tok)
-        elif tok.value == RCURLY:
-            if stack[-1].value == KEYWORD_FUNC:
-                func: Token = stack[-1]
-                tok.block = func.block
-            elif stack[-1].value == KEYWORD_DO:
-                continue
-            stack[-1].block = Block(None, i)
-            if i + 1 < len(tokens) and tokens[i + 1].value != KEYWORD_ELSE:
-                stack.pop()
-        elif tok.value == LPAREN:
-            if tokens[i - 1].type == TOKEN_IDENTIFIER:
-                func_id: Token = tokens[i - 1]
-                if func_id.value == "main":
-                    pass
-                else:
-                    i += 1
-                    while i < len(tokens) and tokens[i].value != RPAREN:
-                        if tokens[i].type == TOKEN_IDENTIFIER:
-                            func_id.args += 1
-                            i += 1
-                        elif tokens[i].value == COMMA:
-                            i += 1
-        else:
-            continue
-    return tokens
-
 op_table: List[str] = [
     # Token types
     "", "", "", "", "", "", "",
@@ -251,7 +209,9 @@ def execute(flag: str, program_file: str) -> None:
     lexer: Lexer = Lexer(program_file)
     tokens: List[Token] = list(lexer.lex())
     parser = Parser(program_file, tokens)
-    parser.parse()
+    ir = list(parser.parse())
+    for a in ir:
+        print(a)
     exit(0)
     tokens = find_block_end(tokens)
 

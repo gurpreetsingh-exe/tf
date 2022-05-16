@@ -12,11 +12,11 @@ class Block:
         return f"[s: {self.start}, e: {self.end}]"
 
 class Token:
-    def __init__(self, type: int, value: Union[str, bytes, int], loc: Tuple[int, int]) -> None:
-        self.type: int = type
+    def __init__(self, typ: int, value: Union[str, bytes, int], loc: Tuple[int, int]) -> None:
+        self.typ: int = typ
         self.value: Union[str, bytes, int] = value
         self.loc: Tuple[int, int] = (loc[0], loc[1] + 1)
         self.raw: str = str(self.value)
 
     def __repr__(self) -> str:
-        return f"[{str(self.loc[0])}, {str(self.loc[1])}]\t {str(self.type).ljust(10)}\t=> `{str(self.value)}`"
+        return f"[{str(self.loc[0])}, {str(self.loc[1])}]\t {str(self.typ).ljust(10)}\t=> `{str(self.value)}`"
