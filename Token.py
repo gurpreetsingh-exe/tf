@@ -11,11 +11,6 @@ class Block:
     def __repr__(self) -> str:
         return f"[s: {self.start}, e: {self.end}]"
 
-class Literal_:
-    def __init__(self, typ, value):
-        self.typ = typ
-        self.value = value
-
 class Token:
     def __init__(self, type: int, value: Union[str, bytes, int], loc: Tuple[int, int]) -> None:
         self.type: int = type
@@ -24,4 +19,4 @@ class Token:
         self.raw: str = str(self.value)
 
     def __repr__(self) -> str:
-        return f"t: {str(self.type)}, v: {str(self.value)}, loc:({str(self.loc[0])}, {str(self.loc[1])})"
+        return f"[{str(self.loc[0])}, {str(self.loc[1])}]\t {str(self.type).ljust(10)}\t=> `{str(self.value)}`"

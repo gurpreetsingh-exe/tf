@@ -1,6 +1,15 @@
 from typing import Dict
 from enum import Enum, auto
 
+class Repr:
+    def __repr__(self):
+        return f"{str(self.typ)}: {str(self.value)}"
+
+class Literal_(Repr):
+    def __init__(self, typ, value):
+        self.typ = typ
+        self.value = value
+
 class LiteralKind(Enum):
     STR: int = auto()
     INT: int = auto()
@@ -48,8 +57,8 @@ Intrinsics: Dict[str, IntrinsicKind] = {
     "syscall6": IntrinsicKind.SYSCALL6,
 }
 
-class Intrinsic:
-    def __init__(self, typ, value) -> None:
+class Intrinsic(Repr):
+    def __init__(self, typ, value):
         self.typ = typ
         self.value = value
 

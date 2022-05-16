@@ -2,7 +2,8 @@ import os
 import sys
 from typing import *
 from token_types import *
-from Token import Literal_, Token
+from Token import Token
+from token_types import Literal_
 
 class Lexer:
     def __init__(self, program_file: str) -> None:
