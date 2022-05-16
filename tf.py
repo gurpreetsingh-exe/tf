@@ -45,7 +45,7 @@ syscall_table = [
     "    pop r9\n    pop r8\n    pop r10\n    pop rdx\n    pop rsi\n    pop rdi\n    pop rax\n    syscall\n",
 ]
 
-def generate_x86_64_nasm_linux(tokens):
+def generate_x86_64_nasm_linux(ir):
     buffer = "section .text\n" + \
     "global _start\n" + \
     "print:\n" + \
@@ -87,6 +87,7 @@ def generate_x86_64_nasm_linux(tokens):
     local_vars = {}
     scope = "global"
     i = 0
+    tokens = []
     while i < len(tokens):
         tok = tokens[i]
         if tok.type == TOKEN_NUMBER:
@@ -192,8 +193,8 @@ def run_command(args):
     sys.stdout.write(buf + "\n")
     subprocess.call(args)
 
-def compile_program(tokens, program_file):
-    buffer = generate_x86_64_nasm_linux(tokens)
+def compile_program(ir, program_file):
+    buffer = generate_x86_64_nasm_linux(ir)
     out_filename = program_file.split('.')[0]
 
     with open(out_filename + ".asm", "w") as out:
@@ -209,16 +210,12 @@ def execute(flag, program_file):
     tokens = list(lexer.lex())
     parser = Parser(program_file, tokens)
     ir = list(parser.parse())
-    for a in ir:
-        print(a)
-    exit(0)
-    tokens = find_block_end(tokens)
 
     if flag == "-r":
-        exec_name = compile_program(tokens, program_file)
+        exec_name = compile_program(ir, program_file)
         run_command(["./" + exec_name])
     elif flag == "-c":
-        compile_program(tokens, program_file)
+        compile_program(ir, program_file)
     else:
         print(f"Unknown flag {flag}")
         exit(1)
