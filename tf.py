@@ -217,6 +217,12 @@ def generate_body(ir):
             buffer += "    pop rbp\n    ret\n"
         elif op[0] == IRKind.Intrinsic:
             buffer += generate_intrinsic(op)
+        elif op[0] == IRKind.Call:
+            # TODO: this is just a hack atm but push rax just in case
+            # we want the return value and there's no other way to get
+            # that, return statements will fix this issue but for now
+            # this will do
+            buffer += f"    call {op[1]}\n    push rax\n"
         i += 1
     return buffer, data
 
