@@ -224,7 +224,14 @@ def generate_body(ir):
             # this will do
             buffer += f"    call {op[1]}\n    push rax\n"
         elif op[0] == IRKind.If:
-            assert False, "Not implemented"
+            buffer += \
+            "    pop rax\n" + \
+            "    cmp rax, 0\n" + \
+            "    je ADDR{}\n".format(i)
+            buf, tmp_data = generate_body(op[1])
+            buffer += buf
+            data['strings'] += tmp_data['strings']
+            buffer += f"ADDR{i}:\n"
         i += 1
     return buffer, data
 
