@@ -88,29 +88,45 @@ def generate_binary_op(op):
             "    sete al\n" + \
             "    push rax\n"
 
+def generate_syscall(ir):
+    print(ir)
+    match ir[1]:
+        case 'print':
+            return \
+            "    pop rdi\n" + \
+            "    call print\n"
+        case _:
+            assert False, "Not implemented"
+
 def generate_body(ir):
     buffer = ""
     i = 0
-    strings = []
+    data = {
+        'strings': [],
+        'funcs': []
+    }
     while i < len(ir):
         op = ir[i]
         if op[0] == IRKind.PushInt:
             buffer += f"    push {str(op[1])}\n"
         elif op[0] == IRKind.PushStr:
-            buffer += f"    push S{len(strings)}\n"
-            strings.append(op[1])
+            buffer += f"    push S{len(data['strings'])}\n"
+            data['strings'].append(op[1])
         elif op[0] == IRKind.Binary:
             buffer += generate_binary_op(op)
         elif op[0] == IRKind.Func:
             buffer += f"{op[1]}:\n" + \
                 "    push rbp\n" + \
                 "    mov rbp, rsp\n"
-            buf, strs = generate_body(op[3])
+            buf, tmp_data = generate_body(op[3])
             buffer += buf
-            strings += strs
+            data['strings'] += tmp_data['strings']
+            data['funcs'].append(op[1])
             buffer += "    pop rbp\n    ret\n"
+        elif op[0] == IRKind.Intrinsic:
+            buffer += generate_syscall(op)
         i += 1
-    return buffer, strings
+    return buffer, data
 
 def generate_x86_64_nasm_linux(ir):
     buffer = "section .text\n" + \
@@ -149,7 +165,7 @@ def generate_x86_64_nasm_linux(ir):
     "    add rsp, 40\n" + \
     "    ret\n"
 
-    buf, strings = generate_body(ir)
+    buf, data = generate_body(ir)
     buffer += buf
     buffer += "_start:\n" + \
         "    call main\n" + \
@@ -160,7 +176,7 @@ def generate_x86_64_nasm_linux(ir):
         "    mem: resb 1024\n" + \
         "section .data\n"
 
-    for i, string in enumerate(strings):
+    for i, string in enumerate(data['strings']):
         if isinstance(string, bytes):
             raw_byte: str = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
             buffer += f"S{i}:\n   db {raw_byte}\n"
