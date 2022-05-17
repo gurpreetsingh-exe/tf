@@ -9,6 +9,7 @@ class IRKind(Enum):
     Binary = auto()
     Intrinsic = auto()
     Call = auto()
+    If = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -94,6 +95,10 @@ class Parser:
                 # this must be a function call right?
                 symbol = self.expect(TokenKind.IDENT).value
                 yield (IRKind.Call, symbol)
+            elif self.curr_tok.typ == TokenKind.IF:
+                self.expect(TokenKind.IF)
+                body = self.block()
+                yield (IRKind.If, body)
             else:
                 return
 

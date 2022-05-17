@@ -223,6 +223,8 @@ def generate_body(ir):
             # that, return statements will fix this issue but for now
             # this will do
             buffer += f"    call {op[1]}\n    push rax\n"
+        elif op[0] == IRKind.If:
+            assert False, "Not implemented"
         i += 1
     return buffer, data
 
