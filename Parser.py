@@ -69,17 +69,12 @@ class Parser:
     def block(self):
         self.expect(TokenKind.LCURLY)
         block = list(self.stmt())
+        self.expect(TokenKind.RCURLY)
         return block
 
     def stmt(self):
         while self.curr_tok != TokenKind.EOF:
-            if self.curr_tok.typ == TokenKind.FUNC:
-                self.expect(TokenKind.FUNC)
-                symbol = self.expect(TokenKind.IDENT).value
-                sign = self.func_sign()
-                body = self.block()
-                yield (IRKind.Func, symbol, sign, body)
-            elif self.curr_tok.typ == TokenKind.LITERAL:
+            if self.curr_tok.typ == TokenKind.LITERAL:
                 lit = self.curr_tok.value
                 if lit.typ == LiteralKind.INT:
                     ir = (IRKind.PushInt, lit.value)
@@ -95,8 +90,15 @@ class Parser:
                 yield (IRKind.Intrinsic, intrinsic.value)
                 self.advance()
             else:
-                self.advance()
+                return
 
     def parse(self):
         while self.curr_tok != TokenKind.EOF:
-            return self.stmt()
+            if self.curr_tok.typ == TokenKind.FUNC:
+                self.expect(TokenKind.FUNC)
+                symbol = self.expect(TokenKind.IDENT).value
+                sign = self.func_sign()
+                body = self.block()
+                yield (IRKind.Func, symbol, sign, body)
+            else:
+                yield self.stmt()
