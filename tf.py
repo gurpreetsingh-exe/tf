@@ -88,7 +88,17 @@ def generate_binary_op(op):
             "    sete al\n" + \
             "    push rax\n"
 
-def generate_syscall(ir):
+def generate_intrinsic(ir):
+    syscall_stmts = [
+    "    pop r9\n",
+    "    pop r8\n",
+    "    pop r10\n",
+    "    pop rdx\n",
+    "    pop rsi\n",
+    "    pop rdi\n",
+    "    pop rax\n",
+    "    syscall\n",
+    "    push rax\n",]
     match ir[1]:
         case 'print':
             return \
@@ -96,55 +106,22 @@ def generate_syscall(ir):
             "    call print\n"
         case 'syscall1':
             return \
-            "    pop rdi\n" + \
-            "    pop rax\n" + \
-            "    syscall\n" + \
-            "    push rax\n"
+                "".join(syscall_stmts[5:])
         case 'syscall2':
             return \
-            "    pop rsi\n" + \
-            "    pop rdi\n" + \
-            "    pop rax\n" + \
-            "    syscall\n" + \
-            "    push rax\n"
+                "".join(syscall_stmts[4:])
         case 'syscall3':
             return \
-            "    pop rdx\n" + \
-            "    pop rsi\n" + \
-            "    pop rdi\n" + \
-            "    pop rax\n" + \
-            "    syscall\n" + \
-            "    push rax\n"
+                "".join(syscall_stmts[3:])
         case 'syscall4':
             return \
-            "    pop r10\n" + \
-            "    pop rdx\n" + \
-            "    pop rsi\n" + \
-            "    pop rdi\n" + \
-            "    pop rax\n" + \
-            "    syscall\n" + \
-            "    push rax\n"
+                "".join(syscall_stmts[2:])
         case 'syscall5':
             return \
-            "    pop r8\n" + \
-            "    pop r10\n" + \
-            "    pop rdx\n" + \
-            "    pop rsi\n" + \
-            "    pop rdi\n" + \
-            "    pop rax\n" + \
-            "    syscall\n" + \
-            "    push rax\n"
+                "".join(syscall_stmts[1:])
         case 'syscall6':
             return \
-            "    pop r9\n" + \
-            "    pop r8\n" + \
-            "    pop r10\n" + \
-            "    pop rdx\n" + \
-            "    pop rsi\n" + \
-            "    pop rdi\n" + \
-            "    pop rax\n" + \
-            "    syscall\n" + \
-            "    push rax\n"
+                "".join(syscall_stmts)
         case _:
             assert False, "Not implemented"
 
@@ -174,7 +151,7 @@ def generate_body(ir):
             data['funcs'].append(op[1])
             buffer += "    pop rbp\n    ret\n"
         elif op[0] == IRKind.Intrinsic:
-            buffer += generate_syscall(op)
+            buffer += generate_intrinsic(op)
         i += 1
     return buffer, data
 
