@@ -124,37 +124,68 @@ def generate_intrinsic(ir):
                 "".join(syscall_stmts)
         case 'drop':
             return \
-            "    ;; not implemented"
+            "    pop rax\n"
         case 'swap':
             return \
-            "    ;; not implemented"
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    push rax\n" + \
+            "    push rbx\n"
         case 'dup':
             return \
-            "    ;; not implemented"
+            "    pop rax\n" + \
+            "    push rax\n" + \
+            "    push rax\n"
         case 'over':
             return \
-            "    ;; not implemented"
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    push rbx\n" + \
+            "    push rax\n" + \
+            "    push rbx\n"
         case 'rot':
             return \
-            "    ;; not implemented"
+            "    pop rax\n" + \
+            "    pop rbx\n" + \
+            "    pop rcx\n" + \
+            "    push rbx\n" + \
+            "    push rax\n" + \
+            "    push rcx\n"
         case 'mem':
+            # TODO: remove this intrinsic?? because we can use mmap syscall
+            # for memory allocation
             return \
-            "    ;; not implemented"
+            "    push mem\n"
         case 'read8':
             return \
-            "    ;; not implemented"
+            "    pop rax\n" + \
+            "    xor rbx, rbx\n" + \
+            "    mov bl, [rax]\n" + \
+            "    push rbx\n"
         case 'write8':
             return \
-            "    ;; not implemented"
+            "    pop rbx\n" + \
+            "    pop rax\n" + \
+            "    mov [rax], bl\n"
         case 'read64':
             return \
-            "    ;; not implemented"
+            "    pop rax\n" + \
+            "    xor rbx, rbx\n" + \
+            "    mov rbx, [rax]\n" + \
+            "    push rbx\n"
         case 'write64':
             return \
-            "    ;; not implemented"
+            "    pop rbx\n" + \
+            "    pop rax\n" + \
+            "    mov [rax], rbx\n"
         case 'divmod':
             return \
-            "    ;; not implemented"
+            "    pop rbx\n" + \
+            "    pop rax\n" + \
+            "    xor rdx, rdx\n" + \
+            "    div rbx\n" + \
+            "    push rax\n" + \
+            "    push rdx\n"
         case _:
             print("Undefined intrinsic")
             exit(1)
