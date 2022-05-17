@@ -196,10 +196,10 @@ def generate_body(ir, data):
     while i < len(ir):
         op = ir[i]
         if op[0] == IRKind.PushInt:
-            buffer += f"    push {str(op[1])}\n"
+            buffer += f"    push {op[1]}\n"
         elif op[0] == IRKind.PushStr:
-            buffer += f"    push S{len(data['strings'])}\n"
-            data['strings'].append(op[1])
+            buffer += f"    push S{op[2]}\n"
+            data['strings'].append(op[1:])
         elif op[0] == IRKind.Binary:
             buffer += generate_binary_op(op)
         elif op[0] == IRKind.Func:
@@ -287,7 +287,7 @@ def generate_x86_64_nasm_linux(ir):
         "    mem: resb 1024\n" + \
         "section .data\n"
 
-    for i, string in enumerate(data['strings']):
+    for string, i in data['strings']:
         if isinstance(string, bytes):
             raw_byte: str = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
             buffer += f"S{i}:\n   db {raw_byte}\n"

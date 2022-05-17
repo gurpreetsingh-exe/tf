@@ -87,7 +87,8 @@ class Parser:
                 if lit.typ == LiteralKind.INT:
                     ir = (IRKind.PushInt, lit.value)
                 elif lit.typ == LiteralKind.STR:
-                    ir = (IRKind.PushStr, lit.value)
+                    str_addr = self.inc_addr_get()
+                    ir = (IRKind.PushStr, lit.value, str_addr)
                 yield ir
                 self.advance()
             elif self.curr_tok.typ in BinaryOps:
