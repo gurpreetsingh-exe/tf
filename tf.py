@@ -122,8 +122,42 @@ def generate_intrinsic(ir):
         case 'syscall6':
             return \
                 "".join(syscall_stmts)
+        case 'drop':
+            return \
+            "    ;; not implemented"
+        case 'swap':
+            return \
+            "    ;; not implemented"
+        case 'dup':
+            return \
+            "    ;; not implemented"
+        case 'over':
+            return \
+            "    ;; not implemented"
+        case 'rot':
+            return \
+            "    ;; not implemented"
+        case 'mem':
+            return \
+            "    ;; not implemented"
+        case 'read8':
+            return \
+            "    ;; not implemented"
+        case 'write8':
+            return \
+            "    ;; not implemented"
+        case 'read64':
+            return \
+            "    ;; not implemented"
+        case 'write64':
+            return \
+            "    ;; not implemented"
+        case 'divmod':
+            return \
+            "    ;; not implemented"
         case _:
-            assert False, "Not implemented"
+            print("Undefined intrinsic")
+            exit(1)
 
 def generate_body(ir):
     buffer = ""
