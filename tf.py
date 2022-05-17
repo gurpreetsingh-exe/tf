@@ -89,12 +89,62 @@ def generate_binary_op(op):
             "    push rax\n"
 
 def generate_syscall(ir):
-    print(ir)
     match ir[1]:
         case 'print':
             return \
             "    pop rdi\n" + \
             "    call print\n"
+        case 'syscall1':
+            return \
+            "    pop rdi\n" + \
+            "    pop rax\n" + \
+            "    syscall\n" + \
+            "    push rax\n"
+        case 'syscall2':
+            return \
+            "    pop rsi\n" + \
+            "    pop rdi\n" + \
+            "    pop rax\n" + \
+            "    syscall\n" + \
+            "    push rax\n"
+        case 'syscall3':
+            return \
+            "    pop rdx\n" + \
+            "    pop rsi\n" + \
+            "    pop rdi\n" + \
+            "    pop rax\n" + \
+            "    syscall\n" + \
+            "    push rax\n"
+        case 'syscall4':
+            return \
+            "    pop r10\n" + \
+            "    pop rdx\n" + \
+            "    pop rsi\n" + \
+            "    pop rdi\n" + \
+            "    pop rax\n" + \
+            "    syscall\n" + \
+            "    push rax\n"
+        case 'syscall5':
+            return \
+            "    pop r8\n" + \
+            "    pop r10\n" + \
+            "    pop rdx\n" + \
+            "    pop rsi\n" + \
+            "    pop rdi\n" + \
+            "    pop rax\n" + \
+            "    syscall\n" + \
+            "    push rax\n"
+        case 'syscall6':
+            return \
+            "    pop r9\n" + \
+            "    pop r8\n" + \
+            "    pop r10\n" + \
+            "    pop rdx\n" + \
+            "    pop rsi\n" + \
+            "    pop rdi\n" + \
+            "    pop rax\n" + \
+            "    syscall\n" + \
+            "    push rax\n"
         case _:
             assert False, "Not implemented"
 
