@@ -45,6 +45,8 @@ class Parser:
         self.idx = 0
         self.curr_tok = self.tokens[self.idx]
 
+        self.addr = 0
+
     def advance(self):
         if self.idx < len(self.tokens) - 1:
             self.idx += 1
@@ -74,6 +76,10 @@ class Parser:
         self.expect(TokenKind.RCURLY)
         return block
 
+    def inc_addr_get(self):
+        self.addr += 1
+        return self.addr
+
     def stmt(self):
         while self.curr_tok != TokenKind.EOF:
             if self.curr_tok.typ == TokenKind.LITERAL:
@@ -97,8 +103,15 @@ class Parser:
                 yield (IRKind.Call, symbol)
             elif self.curr_tok.typ == TokenKind.IF:
                 self.expect(TokenKind.IF)
+                if_addr = self.inc_addr_get()
                 body = self.block()
-                yield (IRKind.If, body)
+                else_block = None
+                else_addr = None
+                if self.curr_tok.typ == TokenKind.ELSE:
+                    self.expect(TokenKind.ELSE)
+                    else_addr = self.inc_addr_get()
+                    else_block = self.block()
+                yield (IRKind.If, body, if_addr, else_block, else_addr)
             else:
                 return
 

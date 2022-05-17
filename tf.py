@@ -190,13 +190,9 @@ def generate_intrinsic(ir):
             print("Undefined intrinsic")
             exit(1)
 
-def generate_body(ir):
+def generate_body(ir, data):
     buffer = ""
     i = 0
-    data = {
-        'strings': [],
-        'funcs': []
-    }
     while i < len(ir):
         op = ir[i]
         if op[0] == IRKind.PushInt:
@@ -210,9 +206,8 @@ def generate_body(ir):
             buffer += f"{op[1]}:\n" + \
                 "    push rbp\n" + \
                 "    mov rbp, rsp\n"
-            buf, tmp_data = generate_body(op[3])
+            buf, data = generate_body(op[3], data)
             buffer += buf
-            data['strings'] += tmp_data['strings']
             data['funcs'].append(op[1])
             buffer += "    pop rbp\n    ret\n"
         elif op[0] == IRKind.Intrinsic:
@@ -227,11 +222,16 @@ def generate_body(ir):
             buffer += \
             "    pop rax\n" + \
             "    cmp rax, 0\n" + \
-            "    je ADDR{}\n".format(i)
-            buf, tmp_data = generate_body(op[1])
+            "    je ADDR{}\n".format(op[2])
+            buf, data = generate_body(op[1], data)
             buffer += buf
-            data['strings'] += tmp_data['strings']
-            buffer += f"ADDR{i}:\n"
+            if op[3]:
+                buffer += f"    jmp ADDR{op[4]}\nADDR{op[2]}:\n"
+                buf, data = generate_body(op[3], data)
+                buffer += buf
+                buffer += f"ADDR{op[4]}:\n"
+            else:
+                buffer += f"ADDR{op[2]}:\n"
         i += 1
     return buffer, data
 
@@ -272,7 +272,11 @@ def generate_x86_64_nasm_linux(ir):
     "    add rsp, 40\n" + \
     "    ret\n"
 
-    buf, data = generate_body(ir)
+    data = {
+        'strings': [],
+        'funcs': []
+    }
+    buf, data = generate_body(ir, data)
     buffer += buf
     buffer += "_start:\n" + \
         "    call main\n" + \
