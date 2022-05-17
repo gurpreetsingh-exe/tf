@@ -8,6 +8,7 @@ class IRKind(Enum):
     PushStr = auto()
     Binary = auto()
     Intrinsic = auto()
+    Call = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -89,6 +90,10 @@ class Parser:
                 intrinsic = self.curr_tok.value
                 yield (IRKind.Intrinsic, intrinsic.value)
                 self.advance()
+            elif self.curr_tok.typ == TokenKind.IDENT:
+                # this must be a function call right?
+                symbol = self.expect(TokenKind.IDENT).value
+                yield (IRKind.Call, symbol)
             else:
                 return
 
