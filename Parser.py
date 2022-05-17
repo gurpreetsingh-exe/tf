@@ -1,135 +1,139 @@
-import os
-import sys
-from typing import *
 from token_types import *
-from Token import Token
+
+class IRKind(Enum):
+    Func = auto()
+    FuncSign = auto()
+    Block = auto()
+    PushInt = auto()
+    PushStr = auto()
+    Binary = auto()
+    Intrinsic = auto()
+    Call = auto()
+    If = auto()
+    Do = auto()
+    While = auto()
+
+class BinaryKind(Enum):
+    ADD = auto()
+    SUB = auto()
+    MUL = auto()
+    DIV = auto()
+    LT = auto()
+    GT = auto()
+    SHL = auto()
+    SHR = auto()
+    AND = auto()
+    OR = auto()
+    EQ = auto()
+
+BinaryOps = {
+    TokenKind.PLUS       : BinaryKind.ADD,
+    TokenKind.MINUS      : BinaryKind.SUB,
+    TokenKind.STAR       : BinaryKind.MUL,
+    TokenKind.SLASH      : BinaryKind.DIV,
+    TokenKind.LT         : BinaryKind.LT,
+    TokenKind.GT         : BinaryKind.GT,
+    TokenKind.LT2        : BinaryKind.SHL,
+    TokenKind.GT2        : BinaryKind.SHR,
+    TokenKind.AMPERSAND2 : BinaryKind.AND,
+    TokenKind.PIPE2      : BinaryKind.OR,
+    TokenKind.EQ2        : BinaryKind.EQ,
+}
 
 class Parser:
-    def __init__(self, program_file: str) -> None:
-        self.program_file: str = program_file
+    def __init__(self, filepath, tokens):
+        self.filepath = filepath
+        self.tokens = tokens
+        self.idx = 0
+        self.curr_tok = self.tokens[self.idx]
 
-        self.macros: Dict[str, str] = {}
-        self.include_files: List[str] = []
-        self.id: int = 0
-        self.line: int = 0
-        self.col: int = 0
+        self.addr = 0
 
-        self.program: str = self.load_file()
-        self.curr_char: str = self.program[self.id]
-
-    def load_file(self) -> List[str]:
-        with open(self.program_file) as f:
-            src: List[str] = f.readlines()
-            return self.pre_process(src)
-
-    def advance(self) -> None:
-        if self.curr_char == "\n":
-            self.col = 0
-            self.line += 1
+    def advance(self):
+        if self.idx < len(self.tokens) - 1:
+            self.idx += 1
+            self.curr_tok = self.tokens[self.idx]
         else:
-            self.col += 1
-        self.id += 1
-        self.curr_char = self.program[self.id] if self.id < len(self.program) else None
+            self.curr_tok = TokenKind.EOF
 
-    def eat(self, char) -> None:
-        self.advance()
-        if self.curr_char != char:
-            sys.stdout.write(f"[{self.line}:{self.id % self.line}] ERROR: expected {char}")
+    def expect(self, typ):
+        tok = self.curr_tok
+        if tok.typ != typ:
+            print(f"Expected `{typ}` but got `{tok.typ}`")
             exit(1)
+        self.advance()
+        return tok
 
-    def get_loc(self) -> Tuple[int]:
-        if self.line < 0:
-            return (0, 0,)
-        else:
-            return (self.line + 1, self.col,)
-
-    def parse_word(self, method) -> str:
-        buffer: str = ''
-
-        while self.curr_char != None and method(self) and (not self.curr_char.isspace()):
-            buffer += self.curr_char
+    def func_sign(self):
+        sign = 0
+        self.expect(TokenKind.LPAREN)
+        while self.curr_tok.typ != TokenKind.RPAREN:
             self.advance()
+        self.expect(TokenKind.RPAREN)
+        return (IRKind.FuncSign, 0)
 
-        return buffer
+    def block(self):
+        self.expect(TokenKind.LCURLY)
+        block = list(self.stmt())
+        self.expect(TokenKind.RCURLY)
+        return block
 
-    def parse(self) -> Iterator[Token]:
-        while self.curr_char != None:
-            loc: Tuple[int, int] = self.get_loc()[:]
-            if self.curr_char.isspace():
+    def inc_addr_get(self):
+        self.addr += 1
+        return self.addr
+
+    def stmt(self):
+        while self.curr_tok != TokenKind.EOF:
+            if self.curr_tok.typ == TokenKind.LITERAL:
+                lit = self.curr_tok.value
+                if lit.typ == LiteralKind.INT:
+                    ir = (IRKind.PushInt, lit.value)
+                elif lit.typ == LiteralKind.STR:
+                    str_addr = self.inc_addr_get()
+                    ir = (IRKind.PushStr, lit.value, str_addr)
+                yield ir
                 self.advance()
-                continue
-
-            elif self.curr_char.isdigit():
-                word = self.parse_word(lambda self: self.curr_char.isdigit())
-                yield Token(TOKEN_NUMBER, word, loc)
-            elif self.curr_char.isalpha() or self.curr_char == "_":
-                word = self.parse_word(lambda self: self.curr_char.isalnum() or self.curr_char == "_")
-
-                if word in OPS:
-                    yield Token(TOKEN_OPEARTOR, OPS[word], loc)
-                elif word in KEYWORDS:
-                    yield Token(TOKEN_KEYWORD, KEYWORDS[word], loc)
-                elif word in INTRINSICS:
-                    yield Token(TOKEN_INTRINSIC, INTRINSICS[word], loc)
-                else:
-                    yield Token(TOKEN_IDENTIFIER, word, loc)
-
-            elif self.curr_char in OPS:
-                yield Token(TOKEN_OPEARTOR, OPS[self.curr_char], loc)
+            elif self.curr_tok.typ in BinaryOps:
+                yield (IRKind.Binary, BinaryOps[self.curr_tok.typ])
                 self.advance()
-
-            elif self.curr_char in SPECIAL_CHARS:
-                if self.curr_char == '"':
-                    buffer = ""
-                    self.advance()
-                    while self.curr_char != None and self.curr_char != '"':
-                        buffer += self.curr_char
-                        self.advance()
-                    self.advance()
-                    yield Token(TOKEN_STRING_LITERAL, bytes(buffer, 'utf-8'), loc)
-                else:
-                    yield Token(TOKEN_SPECIAL_CHAR, SPECIAL_CHARS[self.curr_char], loc)
-                    self.advance()
-
-            elif self.curr_char == "/":
-                self.eat('/')
+            elif self.curr_tok.typ == TokenKind.INTRINSIC:
+                intrinsic = self.curr_tok.value
+                yield (IRKind.Intrinsic, intrinsic.value)
                 self.advance()
-                while self.curr_char != "\n":
-                    self.advance()
-
+            elif self.curr_tok.typ == TokenKind.IDENT:
+                # this must be a function call right?
+                symbol = self.expect(TokenKind.IDENT).value
+                yield (IRKind.Call, symbol)
+            elif self.curr_tok.typ == TokenKind.IF:
+                self.expect(TokenKind.IF)
+                if_addr = self.inc_addr_get()
+                body = self.block()
+                else_block = None
+                else_addr = None
+                if self.curr_tok.typ == TokenKind.ELSE:
+                    self.expect(TokenKind.ELSE)
+                    else_addr = self.inc_addr_get()
+                    else_block = self.block()
+                yield (IRKind.If, body, if_addr, else_block, else_addr)
+            elif self.curr_tok.typ == TokenKind.DO:
+                self.expect(TokenKind.DO)
+                do_addr = self.addr
+                end_addr = self.inc_addr_get()
+                body = self.block()
+                yield (IRKind.Do, body, do_addr, end_addr)
+            elif self.curr_tok.typ == TokenKind.WHILE:
+                self.expect(TokenKind.WHILE)
+                yield (IRKind.While, self.inc_addr_get())
             else:
-                assert False, "unreachable"
+                return
 
-    def pre_process(self, src: List[str]) -> str:
-        for i in range(len(src)):
-            line: str = src[i].split("//")[0]
-            if "#include" in line:
-                line = line.split("\n")[0].replace("#include ", "")
-                inc_file_name: str = os.path.join("include", line.replace('"', ""))
-                if inc_file_name in self.include_files:
-                    src[i] = ""
-                    continue
-                self.include_files.append(inc_file_name)
-                with open(inc_file_name, 'r') as inc:
-                    src[i] = ""
-                    contents = inc.readlines()
-                    self.line -= len(contents) + 2
-                    src = contents + src
-
-        for i in range(len(src)):
-            line = src[i].split("//")[0]
-            if "#define" in line:
-                line = line.replace("#define ", "")
-                macro_name = line.split(" ")[0]
-                if macro_name in self.macros:
-                    sys.stdout.write(f"macro re-definition at line {i + 1}\n")
-                    exit(1)
-                self.macros[macro_name] = line.replace(macro_name, "").replace("\n", "").lstrip(" ")
-                src[i] = src[i].replace(src[i], "\n")
-                continue
-            for macro_name, tokens in self.macros.items():
-                ln = "".join(src[i].split("\n")).split(" ")
-                if ln and macro_name in ln:
-                    src[i] = src[i].replace(macro_name, tokens)
-
-        return "".join(src)
+    def parse(self):
+        while self.curr_tok != TokenKind.EOF:
+            if self.curr_tok.typ == TokenKind.FUNC:
+                self.expect(TokenKind.FUNC)
+                symbol = self.expect(TokenKind.IDENT).value
+                sign = self.func_sign()
+                body = self.block()
+                yield (IRKind.Func, symbol, sign, body)
+            else:
+                yield self.stmt()
