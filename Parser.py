@@ -10,6 +10,8 @@ class IRKind(Enum):
     Intrinsic = auto()
     Call = auto()
     If = auto()
+    Do = auto()
+    While = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -113,6 +115,15 @@ class Parser:
                     else_addr = self.inc_addr_get()
                     else_block = self.block()
                 yield (IRKind.If, body, if_addr, else_block, else_addr)
+            elif self.curr_tok.typ == TokenKind.DO:
+                self.expect(TokenKind.DO)
+                do_addr = self.addr
+                end_addr = self.inc_addr_get()
+                body = self.block()
+                yield (IRKind.Do, body, do_addr, end_addr)
+            elif self.curr_tok.typ == TokenKind.WHILE:
+                self.expect(TokenKind.WHILE)
+                yield (IRKind.While, self.inc_addr_get())
             else:
                 return
 

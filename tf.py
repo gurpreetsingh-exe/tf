@@ -232,6 +232,17 @@ def generate_body(ir, data):
                 buffer += f"ADDR{op[4]}:\n"
             else:
                 buffer += f"ADDR{op[2]}:\n"
+        elif op[0] == IRKind.While:
+            buffer += \
+            f"ADDR{op[1]}:\n"
+        elif op[0] == IRKind.Do:
+            buffer += \
+            "    pop rax\n" + \
+            "    cmp rax, 0\n" + \
+            "    jne ADDR{}\n".format(op[3])
+            buf, data = generate_body(op[1], data)
+            buffer += buf
+            buffer += f"    jmp ADDR{op[2]}\nADDR{op[3]}:\n"
         i += 1
     return buffer, data
 
