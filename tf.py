@@ -36,15 +36,16 @@ def generate_binary_op(op):
             "    push rax\n"
         case BinaryKind.LT:
             return \
-            "    pop rax\n" + \
             "    pop rbx\n" + \
+            "    pop rax\n" + \
+            "    sub rbx, 1\n" + \
             "    cmp rax, rbx\n" + \
-            "    setl al\n" + \
+            "    setle al\n" + \
             "    push rax\n"
         case BinaryKind.GT:
             return \
-            "    pop rax\n" + \
             "    pop rbx\n" + \
+            "    pop rax\n" + \
             "    cmp rax, rbx\n" + \
             "    setg al\n" + \
             "    push rax\n"
