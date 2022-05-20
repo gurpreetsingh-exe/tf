@@ -12,6 +12,7 @@ class IRKind(Enum):
     If = auto()
     Do = auto()
     While = auto()
+    Destruct = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -124,6 +125,15 @@ class Parser:
             elif self.curr_tok.typ == TokenKind.WHILE:
                 self.expect(TokenKind.WHILE)
                 yield (IRKind.While, self.inc_addr_get())
+            elif self.curr_tok.typ == TokenKind.TILDE:
+                self.expect(TokenKind.TILDE)
+                self.expect(TokenKind.LBRACKET)
+                lit = self.expect(TokenKind.LITERAL).value
+                if lit.typ != LiteralKind.INT:
+                    print("Expected number in destruct operator")
+                    exit(1)
+                self.expect(TokenKind.RBRACKET)
+                yield (IRKind.Destruct, lit.value)
             else:
                 return
 

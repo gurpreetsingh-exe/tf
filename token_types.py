@@ -85,12 +85,15 @@ class TokenKind(Enum):
     RPAREN      = auto()  # `)`
     LCURLY      = auto()  # `{`
     RCURLY      = auto()  # `}`
+    LBRACKET    = auto()  # `[`
+    RBRACKET    = auto()  # `]`
     COMMA       = auto()  # `,`
     DOUBLEQUOTE = auto()  # `"`
     POUND       = auto()  # `#`
     AT          = auto()  # `@`
     AMPERSAND   = auto()  # `&`
     PIPE        = auto()  # `|`
+    TILDE       = auto()  # `~`
 
     LT2         = auto()  # `<<`
     GT2         = auto()  # `>>`
@@ -123,12 +126,15 @@ Punctuators = {
     ')' : TokenKind.RPAREN,
     '{' : TokenKind.LCURLY,
     '}' : TokenKind.RCURLY,
+    '[' : TokenKind.LBRACKET,
+    ']' : TokenKind.RBRACKET,
     ',' : TokenKind.COMMA,
     '"' : TokenKind.DOUBLEQUOTE,
     '#' : TokenKind.POUND,
     '@' : TokenKind.AT,
     '&' : TokenKind.AMPERSAND,
     '|' : TokenKind.PIPE,
+    '~' : TokenKind.TILDE,
     '<<': TokenKind.LT2,
     '>>': TokenKind.GT2,
     '&&': TokenKind.AMPERSAND2,

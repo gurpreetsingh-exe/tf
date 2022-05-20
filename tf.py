@@ -244,6 +244,10 @@ def generate_body(ir, data):
             buf, data = generate_body(op[1], data)
             buffer += buf
             buffer += f"    jmp ADDR{op[2]}\nADDR{op[3]}:\n"
+        elif op[0] == IRKind.Destruct:
+            arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
+            for reg in reversed(arg_regs[:int(op[1])]):
+                buffer += f"    pop {reg}\n"
         i += 1
     return buffer, data
 
