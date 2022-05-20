@@ -90,39 +90,16 @@ def generate_binary_op(op):
             "    push rax\n"
 
 def generate_intrinsic(ir):
-    syscall_stmts = [
-    "    pop r9\n",
-    "    pop r8\n",
-    "    pop r10\n",
-    "    pop rdx\n",
-    "    pop rsi\n",
-    "    pop rdi\n",
-    "    pop rax\n",
-    "    syscall\n",
-    "    push rax\n",]
     match ir[1]:
         case 'print':
             return \
             "    pop rdi\n" + \
             "    call print\n"
-        case 'syscall1':
+        case 'syscall':
             return \
-                "".join(syscall_stmts[5:])
-        case 'syscall2':
-            return \
-                "".join(syscall_stmts[4:])
-        case 'syscall3':
-            return \
-                "".join(syscall_stmts[3:])
-        case 'syscall4':
-            return \
-                "".join(syscall_stmts[2:])
-        case 'syscall5':
-            return \
-                "".join(syscall_stmts[1:])
-        case 'syscall6':
-            return \
-                "".join(syscall_stmts)
+            "    pop rax\n" + \
+            "    syscall\n" + \
+            "    push rax\n"
         case 'drop':
             return \
             "    pop rax\n"

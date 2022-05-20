@@ -28,12 +28,7 @@ class IntrinsicKind(Enum):
     DIVMOD = auto()
 
     PRINT = auto()
-    SYSCALL1 = auto()
-    SYSCALL2 = auto()
-    SYSCALL3 = auto()
-    SYSCALL4 = auto()
-    SYSCALL5 = auto()
-    SYSCALL6 = auto()
+    SYSCALL = auto()
 
 Intrinsics = {
     "drop"    : IntrinsicKind.DROP,
@@ -48,12 +43,7 @@ Intrinsics = {
     "write64" : IntrinsicKind.WRITE64,
     "divmod"  : IntrinsicKind.DIVMOD,
     "print"   : IntrinsicKind.PRINT,
-    "syscall1": IntrinsicKind.SYSCALL1,
-    "syscall2": IntrinsicKind.SYSCALL2,
-    "syscall3": IntrinsicKind.SYSCALL3,
-    "syscall4": IntrinsicKind.SYSCALL4,
-    "syscall5": IntrinsicKind.SYSCALL5,
-    "syscall6": IntrinsicKind.SYSCALL6,
+    "syscall": IntrinsicKind.SYSCALL,
 }
 
 class Intrinsic(Repr):
