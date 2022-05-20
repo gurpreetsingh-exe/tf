@@ -41,6 +41,13 @@ BinaryOps = {
     TokenKind.EQ2        : BinaryKind.EQ,
 }
 
+expressions = [
+    TokenKind.LITERAL,
+    TokenKind.INTRINSIC,
+    TokenKind.IDENT,
+    TokenKind.TILDE,
+] + list(BinaryOps.keys())
+
 class Parser:
     def __init__(self, filepath, tokens):
         self.filepath = filepath
@@ -83,28 +90,45 @@ class Parser:
         self.addr += 1
         return self.addr
 
+    def expr(self):
+        if self.curr_tok.typ == TokenKind.LITERAL:
+            lit = self.curr_tok.value
+            if lit.typ == LiteralKind.INT:
+                ir = (IRKind.PushInt, lit.value)
+            elif lit.typ == LiteralKind.STR:
+                str_addr = self.inc_addr_get()
+                ir = (IRKind.PushStr, lit.value, str_addr)
+            self.advance()
+            return ir
+        elif self.curr_tok.typ in BinaryOps:
+            op = self.curr_tok.typ
+            self.advance()
+            return (IRKind.Binary, BinaryOps[op])
+        elif self.curr_tok.typ == TokenKind.INTRINSIC:
+            intrinsic = self.curr_tok.value
+            self.advance()
+            return (IRKind.Intrinsic, intrinsic.value)
+        elif self.curr_tok.typ == TokenKind.IDENT:
+            # this must be a function call right?
+            symbol = self.expect(TokenKind.IDENT).value
+            self.advance()
+            return (IRKind.Call, symbol)
+        elif self.curr_tok.typ == TokenKind.TILDE:
+            self.expect(TokenKind.TILDE)
+            self.expect(TokenKind.LBRACKET)
+            lit = self.expect(TokenKind.LITERAL).value
+            if lit.typ != LiteralKind.INT:
+                print("Expected number in destruct operator")
+                exit(1)
+            self.expect(TokenKind.RBRACKET)
+            return (IRKind.Destruct, lit.value)
+        else:
+            return
+
     def stmt(self):
         while self.curr_tok != TokenKind.EOF:
-            if self.curr_tok.typ == TokenKind.LITERAL:
-                lit = self.curr_tok.value
-                if lit.typ == LiteralKind.INT:
-                    ir = (IRKind.PushInt, lit.value)
-                elif lit.typ == LiteralKind.STR:
-                    str_addr = self.inc_addr_get()
-                    ir = (IRKind.PushStr, lit.value, str_addr)
-                yield ir
-                self.advance()
-            elif self.curr_tok.typ in BinaryOps:
-                yield (IRKind.Binary, BinaryOps[self.curr_tok.typ])
-                self.advance()
-            elif self.curr_tok.typ == TokenKind.INTRINSIC:
-                intrinsic = self.curr_tok.value
-                yield (IRKind.Intrinsic, intrinsic.value)
-                self.advance()
-            elif self.curr_tok.typ == TokenKind.IDENT:
-                # this must be a function call right?
-                symbol = self.expect(TokenKind.IDENT).value
-                yield (IRKind.Call, symbol)
+            if self.curr_tok.typ in expressions:
+                yield self.expr()
             elif self.curr_tok.typ == TokenKind.IF:
                 self.expect(TokenKind.IF)
                 if_addr = self.inc_addr_get()
@@ -125,15 +149,6 @@ class Parser:
             elif self.curr_tok.typ == TokenKind.WHILE:
                 self.expect(TokenKind.WHILE)
                 yield (IRKind.While, self.inc_addr_get())
-            elif self.curr_tok.typ == TokenKind.TILDE:
-                self.expect(TokenKind.TILDE)
-                self.expect(TokenKind.LBRACKET)
-                lit = self.expect(TokenKind.LITERAL).value
-                if lit.typ != LiteralKind.INT:
-                    print("Expected number in destruct operator")
-                    exit(1)
-                self.expect(TokenKind.RBRACKET)
-                yield (IRKind.Destruct, lit.value)
             else:
                 return
 
