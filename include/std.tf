@@ -4,9 +4,6 @@
 #define STDOUT 1
 #define STDERR 2
 
-#define << shl
-#define >> shr
-
 // Syscalls
 #define SYSCALL_READ 0
 #define SYSCALL_WRITE 1
@@ -350,13 +347,13 @@ func write(fd, buf, size) {
 // String helper functions
 func strlen(string) {
     0 do {
-        string @ drop
+        string read8 drop
         1 +
-    } dup string + @ NULL = 0 = while
-    mem swap &
+    } dup string + read8 NULL == 0 == while
+    mem swap write8
 }
 
 func printf(string) {
-    STDOUT string strlen mem @ write
+    STDOUT string strlen mem read8 write
     drop drop drop
 }
