@@ -217,7 +217,7 @@ def generate_body(ir, data):
             buffer += \
             "    pop rax\n" + \
             "    cmp rax, 0\n" + \
-            "    jne ADDR{}\n".format(op[3])
+            "    je ADDR{}\n".format(op[3])
             buf, data = generate_body(op[1], data)
             buffer += buf
             buffer += f"    jmp ADDR{op[2]}\nADDR{op[3]}:\n"
