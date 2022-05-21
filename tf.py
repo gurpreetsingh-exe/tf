@@ -8,6 +8,8 @@ from Token import *
 from Lexer import Lexer
 from Parser import BinaryKind, IRKind, Parser
 
+symbols = None
+
 def generate_binary_op(op):
     match op[1]:
         case BinaryKind.ADD:
@@ -225,6 +227,12 @@ def generate_body(ir, data):
             arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
             for reg in reversed(arg_regs[:int(op[1])]):
                 buffer += f"    pop {reg}\n"
+        elif op[0] == IRKind.Let:
+            vars = symbols['vars']
+            arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
+            reg = arg_regs[:len(op[1])]
+            for x, v in enumerate(op[1]):
+                buffer += f"    mov [rbp - {vars[v]}], {reg[x]}\n"
         i += 1
     return buffer, data
 
@@ -312,6 +320,8 @@ def execute(flag, program_file):
     tokens = list(lexer.lex())
     parser = Parser(program_file, tokens)
     ir = list(parser.parse())
+    global symbols
+    symbols = parser.symbols
 
     if flag == "-r":
         exec_name = compile_program(ir, program_file)

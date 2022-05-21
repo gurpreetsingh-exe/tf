@@ -61,6 +61,7 @@ class TokenKind(Enum):
     ELSE        = auto()
     DO          = auto()
     WHILE       = auto()
+    LET         = auto()
 
     PLUS        = auto()  # `+`
     MINUS       = auto()  # `-`
@@ -100,6 +101,7 @@ Keywords = {
     "do"   : TokenKind.DO,
     "while": TokenKind.WHILE,
     "func" : TokenKind.FUNC,
+    "let"  : TokenKind.LET,
 }
 
 Punctuators = {

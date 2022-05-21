@@ -13,6 +13,7 @@ class IRKind(Enum):
     Do = auto()
     While = auto()
     Destruct = auto()
+    Let = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -46,6 +47,7 @@ expressions = [
     TokenKind.INTRINSIC,
     TokenKind.IDENT,
     TokenKind.TILDE,
+    TokenKind.LET,
 ] + list(BinaryOps.keys())
 
 class Parser:
@@ -56,6 +58,9 @@ class Parser:
         self.curr_tok = self.tokens[self.idx]
 
         self.addr = 0
+        self.symbols = {}
+        self.offset = 0
+        self.symbols['vars'] = {}
 
     def advance(self):
         if self.idx < len(self.tokens) - 1:
@@ -123,6 +128,23 @@ class Parser:
                     exit(1)
                 self.expect(TokenKind.RBRACKET)
                 yield (IRKind.Destruct, lit.value)
+            elif self.curr_tok.typ == TokenKind.LET:
+                self.expect(TokenKind.LET)
+                syms = []
+                while self.curr_tok.typ != TokenKind.SEMI:
+                    symbol = self.expect(TokenKind.IDENT).value
+                    self.offset += 8
+                    if symbol in self.symbols['vars']:
+                        print(f"Variable `{symbol}` is already defined")
+                        exit(1)
+                    self.symbols['vars'][symbol] = self.offset
+                    syms.append(symbol)
+                    if self.curr_tok.typ == TokenKind.SEMI:
+                        break
+                    else:
+                        self.expect(TokenKind.COMMA)
+                self.expect(TokenKind.SEMI)
+                yield (IRKind.Let, syms)
             else:
                 return
 
