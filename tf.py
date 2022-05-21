@@ -9,6 +9,7 @@ from Lexer import Lexer
 from Parser import BinaryKind, IRKind, Parser
 
 symbols = None
+arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
 
 def generate_binary_op(op):
     match op[1]:
@@ -180,16 +181,23 @@ def generate_body(ir, data):
         elif op[0] == IRKind.PushStr:
             buffer += f"    push S{op[2]}\n"
             data['strings'].append(op[1:])
+        elif op[0] == IRKind.PushVar:
+            offset = symbols['vars'][op[1]]
+            buffer += f"    push QWORD [rbp - {offset}]\n"
         elif op[0] == IRKind.Binary:
             buffer += generate_binary_op(op)
         elif op[0] == IRKind.Func:
             buffer += f"{op[1]}:\n" + \
                 "    push rbp\n" + \
-                "    mov rbp, rsp\n"
+                "    mov rbp, rsp\n" + \
+                "    sub rsp, 16\n"
             buf, data = generate_body(op[3], data)
             buffer += buf
             data['funcs'].append(op[1])
-            buffer += "    pop rbp\n    ret\n"
+            buffer += \
+                "    add rsp, 16\n" + \
+                "    pop rbp\n" + \
+                "    ret\n"
         elif op[0] == IRKind.Intrinsic:
             buffer += generate_intrinsic(op)
         elif op[0] == IRKind.Call:
@@ -197,6 +205,10 @@ def generate_body(ir, data):
             # we want the return value and there's no other way to get
             # that, return statements will fix this issue but for now
             # this will do
+            nargs = len(symbols['funcs'][op[1]])
+            regs = arg_regs[:nargs]
+            for x in regs:
+                buffer += f"    pop {x}\n"
             buffer += f"    call {op[1]}\n    push rax\n"
         elif op[0] == IRKind.If:
             buffer += \
@@ -224,12 +236,10 @@ def generate_body(ir, data):
             buffer += buf
             buffer += f"    jmp ADDR{op[2]}\nADDR{op[3]}:\n"
         elif op[0] == IRKind.Destruct:
-            arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
             for reg in reversed(arg_regs[:int(op[1])]):
                 buffer += f"    pop {reg}\n"
         elif op[0] == IRKind.Let:
             vars = symbols['vars']
-            arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
             reg = arg_regs[:len(op[1])]
             for x, v in enumerate(op[1]):
                 buffer += f"    mov [rbp - {vars[v]}], {reg[x]}\n"

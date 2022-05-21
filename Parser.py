@@ -6,6 +6,7 @@ class IRKind(Enum):
     Block = auto()
     PushInt = auto()
     PushStr = auto()
+    PushVar = auto()
     Binary = auto()
     Intrinsic = auto()
     Call = auto()
@@ -61,6 +62,7 @@ class Parser:
         self.symbols = {}
         self.offset = 0
         self.symbols['vars'] = {}
+        self.symbols['funcs'] = {}
 
     def advance(self):
         if self.idx < len(self.tokens) - 1:
@@ -78,12 +80,19 @@ class Parser:
         return tok
 
     def func_sign(self):
-        sign = 0
+        args = []
         self.expect(TokenKind.LPAREN)
         while self.curr_tok.typ != TokenKind.RPAREN:
-            self.advance()
+            typ = self.expect(TokenKind.IDENT).value
+            if typ not in {'int', 'str', 'bool'}:
+                print(f"Unexpected type `{typ}`")
+            args.append(typ)
+            if self.curr_tok.typ == TokenKind.RPAREN:
+                break
+            else:
+                self.expect(TokenKind.COMMA)
         self.expect(TokenKind.RPAREN)
-        return (IRKind.FuncSign, 0)
+        return (IRKind.FuncSign, args)
 
     def block(self):
         self.expect(TokenKind.LCURLY)
@@ -115,10 +124,17 @@ class Parser:
                 self.advance()
                 yield (IRKind.Intrinsic, intrinsic.value)
             elif self.curr_tok.typ == TokenKind.IDENT:
-                # this must be a function call right?
                 symbol = self.expect(TokenKind.IDENT).value
-                self.advance()
-                yield (IRKind.Call, symbol)
+                if self.curr_tok.typ == TokenKind.LPAREN:
+                    if symbol not in self.symbols['funcs']:
+                        print(f"function `{symbol}` is not defined")
+                    self.expect(TokenKind.LPAREN)
+                    self.expect(TokenKind.RPAREN)
+                    yield (IRKind.Call, symbol)
+                else:
+                    if symbol not in self.symbols['vars']:
+                        print(f"Variable `{symbol}` is not defined")
+                    yield (IRKind.PushVar, symbol)
             elif self.curr_tok.typ == TokenKind.TILDE:
                 self.expect(TokenKind.TILDE)
                 self.expect(TokenKind.LBRACKET)
@@ -181,6 +197,7 @@ class Parser:
                 self.expect(TokenKind.FUNC)
                 symbol = self.expect(TokenKind.IDENT).value
                 sign = self.func_sign()
+                self.symbols['funcs'][symbol] = sign[1]
                 body = self.block()
                 yield (IRKind.Func, symbol, sign, body)
             else:
