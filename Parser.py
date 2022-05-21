@@ -59,10 +59,6 @@ class Parser:
         self.curr_tok = self.tokens[self.idx]
 
         self.addr = 0
-        self.symbols = {}
-        self.offset = 0
-        self.symbols['vars'] = {}
-        self.symbols['funcs'] = {}
 
     def advance(self):
         if self.idx < len(self.tokens) - 1:
@@ -74,6 +70,7 @@ class Parser:
     def expect(self, typ):
         tok = self.curr_tok
         if tok.typ != typ:
+            # TODO: also report the location of error in source code
             print(f"Expected `{typ}` but got `{tok.typ}`")
             exit(1)
         self.advance()
@@ -126,14 +123,10 @@ class Parser:
             elif self.curr_tok.typ == TokenKind.IDENT:
                 symbol = self.expect(TokenKind.IDENT).value
                 if self.curr_tok.typ == TokenKind.LPAREN:
-                    if symbol not in self.symbols['funcs']:
-                        print(f"function `{symbol}` is not defined")
                     self.expect(TokenKind.LPAREN)
                     self.expect(TokenKind.RPAREN)
                     yield (IRKind.Call, symbol)
                 else:
-                    if symbol not in self.symbols['vars']:
-                        print(f"Variable `{symbol}` is not defined")
                     yield (IRKind.PushVar, symbol)
             elif self.curr_tok.typ == TokenKind.TILDE:
                 self.expect(TokenKind.TILDE)
@@ -149,11 +142,6 @@ class Parser:
                 syms = []
                 while self.curr_tok.typ != TokenKind.SEMI:
                     symbol = self.expect(TokenKind.IDENT).value
-                    self.offset += 8
-                    if symbol in self.symbols['vars']:
-                        print(f"Variable `{symbol}` is already defined")
-                        exit(1)
-                    self.symbols['vars'][symbol] = self.offset
                     syms.append(symbol)
                     if self.curr_tok.typ == TokenKind.SEMI:
                         break
@@ -197,7 +185,6 @@ class Parser:
                 self.expect(TokenKind.FUNC)
                 symbol = self.expect(TokenKind.IDENT).value
                 sign = self.func_sign()
-                self.symbols['funcs'][symbol] = sign[1]
                 body = self.block()
                 yield (IRKind.Func, symbol, sign, body)
             else:

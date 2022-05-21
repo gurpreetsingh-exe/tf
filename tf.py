@@ -8,7 +8,7 @@ from Token import *
 from Lexer import Lexer
 from Parser import BinaryKind, IRKind, Parser
 
-symbols = None
+offset = 0
 arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
 
 def generate_binary_op(op):
@@ -171,7 +171,20 @@ def generate_intrinsic(ir):
             print("Undefined intrinsic")
             exit(1)
 
+def find_var(data, var):
+    size = len(data)
+    for i in reversed(range(size)):
+        for d in data[i]:
+            if var == d['sym']:
+                return d['offset']
+
+    # TODO: also report the location of error in source code
+    print(f"`{var}` is not defined")
+    exit(1)
+
 def generate_body(ir, data):
+    global offset
+    data['scopes'].append([])
     buffer = ""
     i = 0
     while i < len(ir):
@@ -182,18 +195,19 @@ def generate_body(ir, data):
             buffer += f"    push S{op[2]}\n"
             data['strings'].append(op[1:])
         elif op[0] == IRKind.PushVar:
-            offset = symbols['vars'][op[1]]
-            buffer += f"    push QWORD [rbp - {offset}]\n"
+            off = find_var(data['scopes'], op[1])
+            buffer += f"    push QWORD [rbp - {off}]\n"
         elif op[0] == IRKind.Binary:
             buffer += generate_binary_op(op)
         elif op[0] == IRKind.Func:
+            offset = 0
             buffer += f"{op[1]}:\n" + \
                 "    push rbp\n" + \
                 "    mov rbp, rsp\n" + \
                 "    sub rsp, 16\n"
             buf, data = generate_body(op[3], data)
             buffer += buf
-            data['funcs'].append(op[1])
+            data['funcs'][op[1]] = op[2]
             buffer += \
                 "    add rsp, 16\n" + \
                 "    pop rbp\n" + \
@@ -205,7 +219,7 @@ def generate_body(ir, data):
             # we want the return value and there's no other way to get
             # that, return statements will fix this issue but for now
             # this will do
-            nargs = len(symbols['funcs'][op[1]])
+            nargs = len(data['funcs'][op[1]])
             regs = arg_regs[:nargs]
             for x in regs:
                 buffer += f"    pop {x}\n"
@@ -239,11 +253,13 @@ def generate_body(ir, data):
             for reg in reversed(arg_regs[:int(op[1])]):
                 buffer += f"    pop {reg}\n"
         elif op[0] == IRKind.Let:
-            vars = symbols['vars']
             reg = arg_regs[:len(op[1])]
             for x, v in enumerate(op[1]):
-                buffer += f"    mov [rbp - {vars[v]}], {reg[x]}\n"
+                offset += 8
+                data['scopes'][-1].append({'sym': v, 'offset': offset})
+                buffer += f"    mov [rbp - {offset}], {reg[x]}\n"
         i += 1
+    data['scopes'].pop()
     return buffer, data
 
 def generate_x86_64_nasm_linux(ir):
@@ -285,7 +301,8 @@ def generate_x86_64_nasm_linux(ir):
 
     data = {
         'strings': [],
-        'funcs': []
+        'funcs': {},
+        'scopes': [],
     }
     buf, data = generate_body(ir, data)
     buffer += buf
@@ -330,8 +347,6 @@ def execute(flag, program_file):
     tokens = list(lexer.lex())
     parser = Parser(program_file, tokens)
     ir = list(parser.parse())
-    global symbols
-    symbols = parser.symbols
 
     if flag == "-r":
         exec_name = compile_program(ir, program_file)
