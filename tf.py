@@ -322,6 +322,46 @@ def generate_x86_64_nasm_linux(ir):
 
     return buffer
 
+def ir_passes(ir):
+    data = {}
+    data['consts'] = {}
+    ir, _ = expand_const(ir, data)
+    return ir
+
+def expand_const(ir, data):
+    for i, op in enumerate(ir):
+        if op[0] == IRKind.Const:
+            data['consts'][op[1]] = {
+                'type': op[2],
+                'value': op[3]
+            }
+        elif op[0] == IRKind.Func:
+            if op[1] in data['consts']:
+                print(f"`{op[1]}` is already defined as a constant")
+                exit(1)
+            op[3], data = expand_const(op[3], data)
+        elif op[0] == IRKind.Let:
+            for sym in op[1]:
+                if sym in data['consts']:
+                    print(f"`{sym}` is already defined as a constant")
+                    exit(1)
+        elif op[0] == IRKind.PushVar:
+            if op[1] in data['consts']:
+                lit = data['consts'][op[1]]
+                if lit['type'] == LiteralKind.INT:
+                    dtype = IRKind.PushInt
+                elif lit['type'] == LiteralKind.STR:
+                    dtype = IRKind.PushStr
+                ir[i] = (dtype, lit['value'])
+        elif op[0] == IRKind.If:
+            op[1], data = expand_const(op[1], data)
+            if op[3]:
+                op[3], data = expand_const(op[3], data)
+        elif op[0] == IRKind.Do:
+            op[1], data = expand_const(op[1], data)
+
+    return ir, data
+
 def run_command(args):
     buf = '>>> '
     for arg in args:
@@ -347,6 +387,7 @@ def execute(flag, program_file):
     tokens = list(lexer.lex())
     parser = Parser(program_file, tokens)
     ir = list(parser.parse())
+    ir = ir_passes(ir)
 
     if flag == "-r":
         exec_name = compile_program(ir, program_file)
