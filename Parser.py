@@ -16,6 +16,7 @@ class IRKind(Enum):
     Destruct = auto()
     Let = auto()
     Const = auto()
+    Return = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -58,6 +59,7 @@ class Parser:
         self.tokens = tokens
         self.idx = 0
         self.curr_tok = self.tokens[self.idx]
+        self.has_return = False
 
         self.addr = 0
 
@@ -181,6 +183,10 @@ class Parser:
                 name = self.expect(TokenKind.IDENT).value
                 lit = self.expect(TokenKind.LITERAL).value
                 yield [IRKind.Const, name, lit.typ, lit.value]
+            elif self.curr_tok.typ == TokenKind.RETURN:
+                self.expect(TokenKind.RETURN)
+                yield [IRKind.Return]
+                self.has_return = True
             else:
                 return
 
@@ -191,6 +197,8 @@ class Parser:
                 symbol = self.expect(TokenKind.IDENT).value
                 sign = self.func_sign()
                 body = self.block()
+                sign.append(self.has_return)
                 yield [IRKind.Func, symbol, sign, body]
+                self.has_return = False
             else:
                 yield from self.stmt()
