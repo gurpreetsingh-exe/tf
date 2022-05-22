@@ -20,8 +20,7 @@ class Lexer:
 
     def load_file(self):
         with open(self.program_file) as f:
-            src = f.readlines()
-            return self.pre_process(src)
+            return "".join(f.readlines())
 
     def advance(self):
         if self.curr_char == "\n":
@@ -104,40 +103,3 @@ class Lexer:
 
             else:
                 assert False, "unreachable"
-
-    # TODO: This is sus, need a better system
-    # Maybe after IR is implemented it would be
-    # nice to refactor macros and includes as well
-    def pre_process(self, src) -> str:
-        for i in range(len(src)):
-            line = src[i].split("//")[0]
-            if "#include" in line:
-                line = line.split("\n")[0].replace("#include ", "")
-                inc_file_name = os.path.join("include", line.replace('"', ""))
-                if inc_file_name in self.include_files:
-                    src[i] = ""
-                    continue
-                self.include_files.append(inc_file_name)
-                with open(inc_file_name, 'r') as inc:
-                    src[i] = ""
-                    contents = inc.readlines()
-                    self.line -= len(contents) + 2
-                    src = contents + src
-
-        for i in range(len(src)):
-            line = src[i].split("//")[0]
-            if "#define" in line:
-                line = line.replace("#define ", "")
-                macro_name = line.split(" ")[0]
-                if macro_name in self.macros:
-                    sys.stdout.write(f"macro re-definition at line {i + 1}\n")
-                    exit(1)
-                self.macros[macro_name] = line.replace(macro_name, "").replace("\n", "").lstrip(" ")
-                src[i] = src[i].replace(src[i], "\n")
-                continue
-            for macro_name, tokens in self.macros.items():
-                ln = "".join(src[i].split("\n")).split(" ")
-                if ln and macro_name in ln:
-                    src[i] = src[i].replace(macro_name, tokens)
-
-        return "".join(src)
