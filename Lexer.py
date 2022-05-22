@@ -102,12 +102,6 @@ class Lexer:
                 else:
                     yield Token(Punctuators[prev], prev, loc)
 
-            elif self.curr_char == "/":
-                self.eat('/')
-                self.advance()
-                while self.curr_char != "\n":
-                    self.advance()
-
             else:
                 assert False, "unreachable"
 
