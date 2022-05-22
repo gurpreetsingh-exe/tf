@@ -215,11 +215,9 @@ def generate_body(ir, data):
         elif op[0] == IRKind.Intrinsic:
             buffer += generate_intrinsic(op)
         elif op[0] == IRKind.Call:
-            # TODO: this is just a hack atm but push rax just in case
-            # we want the return value and there's no other way to get
-            # that, return statements will fix this issue but for now
-            # this will do
-            nargs = len(data['funcs'][op[1]])
+            assert data['funcs'][op[1]][0] == IRKind.FuncSign
+            signature = data['funcs'][op[1]][1]
+            nargs = len(signature)
             regs = arg_regs[:nargs]
             for x in regs:
                 buffer += f"    pop {x}\n"
