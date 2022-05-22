@@ -208,7 +208,8 @@ def generate_body(ir, data):
             buf, data = generate_body(op[3], data)
             buffer += buf
             data['funcs'][op[1]] = op[2]
-            buffer += \
+            if not op[2][2]:
+                buffer += \
                 "    add rsp, 16\n" + \
                 "    pop rbp\n" + \
                 "    ret\n"
@@ -221,7 +222,9 @@ def generate_body(ir, data):
             regs = arg_regs[:nargs]
             for x in regs:
                 buffer += f"    pop {x}\n"
-            buffer += f"    call {op[1]}\n    push rax\n"
+            buffer += f"    call {op[1]}\n"
+            if data['funcs'][op[1]][2]:
+                buffer += "    push rax\n"
         elif op[0] == IRKind.If:
             buffer += \
             "    pop rax\n" + \
@@ -256,6 +259,13 @@ def generate_body(ir, data):
                 offset += 8
                 data['scopes'][-1].append({'sym': v, 'offset': offset})
                 buffer += f"    mov [rbp - {offset}], {reg[x]}\n"
+        elif op[0] == IRKind.Return:
+            buffer += \
+            "    pop rax\n" + \
+            "    add rsp, 16\n" + \
+            "    pop rbp\n" + \
+            "    ret\n"
+            break
         i += 1
     data['scopes'].pop()
     return buffer, data
