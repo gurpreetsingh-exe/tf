@@ -331,6 +331,9 @@ def ir_passes(ir):
 def expand_const(ir, data):
     for i, op in enumerate(ir):
         if op[0] == IRKind.Const:
+            if op[1] in data['consts']:
+                print(f"constant `{op[1]}` is already defined")
+                exit(1)
             data['consts'][op[1]] = {
                 'type': op[2],
                 'value': op[3]
