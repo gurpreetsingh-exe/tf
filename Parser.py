@@ -17,6 +17,7 @@ class IRKind(Enum):
     Let = auto()
     Const = auto()
     Return = auto()
+    Import = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -200,5 +201,9 @@ class Parser:
                 sign.append(self.has_return)
                 yield [IRKind.Func, symbol, sign, body]
                 self.has_return = False
+            elif self.curr_tok.typ == TokenKind.IMPORT:
+                self.expect(TokenKind.IMPORT)
+                name = self.expect(TokenKind.IDENT).value
+                yield [IRKind.Import, name]
             else:
                 yield from self.stmt()

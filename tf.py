@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os
+from pathlib import Path
 import sys
 import subprocess
 
@@ -330,9 +332,25 @@ def generate_x86_64_nasm_linux(ir):
 
     return buffer
 
+def resolve_imports(ir):
+    for i, op in enumerate(ir):
+        if op[0] == IRKind.Import:
+            module = op[1]
+            path = Path(__file__).parent
+            mod_path = os.path.join(path, module) + ".tf"
+            if not Path(mod_path).is_file():
+                print(f"{module} doesn't exist")
+                exit(1)
+            tokens = list(Lexer(mod_path).lex())
+            mod_ir = resolve_imports(list(Parser(mod_path, tokens).parse()))
+            ir.pop(i)
+            ir = ir[:i] + mod_ir + ir[i:]
+    return ir
+
 def ir_passes(ir):
     data = {}
     data['consts'] = {}
+    ir = resolve_imports(ir)
     ir, _ = expand_const(ir, data)
     return ir
 
