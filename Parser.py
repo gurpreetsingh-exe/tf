@@ -70,8 +70,7 @@ class Parser:
     def expect(self, typ):
         tok = self.curr_tok
         if tok.typ != typ:
-            # TODO: also report the location of error in source code
-            print(f"Expected `{typ}` but got `{tok.typ}`")
+            print(f"{self.curr_tok.loc} Expected `{typ}` but got `{tok.typ}`")
             exit(1)
         self.advance()
         return tok
