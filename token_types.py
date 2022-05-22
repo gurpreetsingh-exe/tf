@@ -63,6 +63,7 @@ class TokenKind(Enum):
     WHILE       = auto()
     LET         = auto()
     CONST       = auto()
+    RETURN      = auto()
 
     PLUS        = auto()  # `+`
     MINUS       = auto()  # `-`
@@ -97,13 +98,14 @@ class TokenKind(Enum):
     UNDEFINED   = auto()
 
 Keywords = {
-    "if"   : TokenKind.IF,
-    "else" : TokenKind.ELSE,
-    "do"   : TokenKind.DO,
-    "while": TokenKind.WHILE,
-    "func" : TokenKind.FUNC,
-    "let"  : TokenKind.LET,
-    "const": TokenKind.CONST,
+    "if"    : TokenKind.IF,
+    "else"  : TokenKind.ELSE,
+    "do"    : TokenKind.DO,
+    "while" : TokenKind.WHILE,
+    "func"  : TokenKind.FUNC,
+    "let"   : TokenKind.LET,
+    "const" : TokenKind.CONST,
+    "return": TokenKind.RETURN,
 }
 
 Punctuators = {
