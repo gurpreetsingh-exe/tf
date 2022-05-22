@@ -6,24 +6,24 @@ from Token import Token
 from token_types import Literal_
 
 class Lexer:
-    def __init__(self, program_file: str) -> None:
-        self.program_file: str = program_file
+    def __init__(self, program_file):
+        self.program_file = program_file
 
-        self.macros: Dict[str, str] = {}
-        self.include_files: List[str] = []
-        self.id: int = 0
-        self.line: int = 0
-        self.col: int = 0
+        self.macros = {}
+        self.include_files = []
+        self.id = 0
+        self.line = 0
+        self.col = 0
 
-        self.program: str = self.load_file()
-        self.curr_char: str = self.program[self.id]
+        self.program = self.load_file()
+        self.curr_char = self.program[self.id]
 
-    def load_file(self) -> List[str]:
+    def load_file(self):
         with open(self.program_file) as f:
-            src: List[str] = f.readlines()
+            src = f.readlines()
             return self.pre_process(src)
 
-    def advance(self) -> None:
+    def advance(self):
         if self.curr_char == "\n":
             self.col = 0
             self.line += 1
@@ -32,20 +32,20 @@ class Lexer:
         self.id += 1
         self.curr_char = self.program[self.id] if self.id < len(self.program) else None
 
-    def eat(self, char) -> None:
+    def eat(self, char):
         self.advance()
         if self.curr_char != char:
             sys.stdout.write(f"[{self.line}:{self.id % self.line}] ERROR: expected {char}")
             exit(1)
 
-    def get_loc(self) -> Tuple[int]:
+    def get_loc(self):
         if self.line < 0:
             return (0, 0,)
         else:
-            return (self.line + 1, self.col,)
+            return (self.line, self.col,)
 
-    def lex_word(self, method) -> str:
-        buffer: str = ''
+    def lex_word(self, method):
+        buffer = ''
 
         while self.curr_char != None and method(self) and (not self.curr_char.isspace()):
             buffer += self.curr_char
@@ -53,9 +53,9 @@ class Lexer:
 
         return buffer
 
-    def lex(self) -> Iterator[Token]:
+    def lex(self):
         while self.curr_char != None:
-            loc: Tuple[int, int] = self.get_loc()[:]
+            loc = self.get_loc()[:]
             if self.curr_char.isspace():
                 self.advance()
                 continue
@@ -114,12 +114,12 @@ class Lexer:
     # TODO: This is sus, need a better system
     # Maybe after IR is implemented it would be
     # nice to refactor macros and includes as well
-    def pre_process(self, src: List[str]) -> str:
+    def pre_process(self, src) -> str:
         for i in range(len(src)):
-            line: str = src[i].split("//")[0]
+            line = src[i].split("//")[0]
             if "#include" in line:
                 line = line.split("\n")[0].replace("#include ", "")
-                inc_file_name: str = os.path.join("include", line.replace('"', ""))
+                inc_file_name = os.path.join("include", line.replace('"', ""))
                 if inc_file_name in self.include_files:
                     src[i] = ""
                     continue
