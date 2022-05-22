@@ -64,6 +64,7 @@ class TokenKind(Enum):
     LET         = auto()
     CONST       = auto()
     RETURN      = auto()
+    IMPORT      = auto()
 
     PLUS        = auto()  # `+`
     MINUS       = auto()  # `-`
@@ -106,6 +107,7 @@ Keywords = {
     "let"   : TokenKind.LET,
     "const" : TokenKind.CONST,
     "return": TokenKind.RETURN,
+    "import": TokenKind.IMPORT,
 }
 
 Punctuators = {
