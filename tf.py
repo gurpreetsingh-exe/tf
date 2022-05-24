@@ -317,6 +317,7 @@ def generate_x86_64_nasm_linux(ir):
     buf, data = generate_body(ir, data)
     buffer += buf
     buffer += "_start:\n" + \
+        "    mov rdi, rsp\n" + \
         "    call main\n" + \
         "    mov rax, 60\n" + \
         "    mov rdi, 0\n" + \
