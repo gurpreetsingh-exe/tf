@@ -12,8 +12,7 @@ class Lexer:
         self.macros = {}
         self.include_files = []
         self.id = 0
-        self.line = 0
-        self.col = 0
+        self.loc = [0, 0]
 
         self.program = self.load_file()
         self.curr_char = self.program[self.id]
@@ -24,24 +23,18 @@ class Lexer:
 
     def advance(self):
         if self.curr_char == "\n":
-            self.col = 0
-            self.line += 1
+            self.loc[1] = 0
+            self.loc[0] += 1
         else:
-            self.col += 1
+            self.loc[1] += 1
         self.id += 1
         self.curr_char = self.program[self.id] if self.id < len(self.program) else None
 
     def eat(self, char):
         self.advance()
         if self.curr_char != char:
-            sys.stdout.write(f"[{self.line}:{self.id % self.line}] ERROR: expected {char}")
+            sys.stdout.write(f"[{self.loc[0]}:{self.id % self.loc[0]}] ERROR: expected {char}")
             exit(1)
-
-    def get_loc(self):
-        if self.line < 0:
-            return (0, 0,)
-        else:
-            return (self.line, self.col,)
 
     def lex_word(self, method):
         buffer = ''
@@ -54,7 +47,7 @@ class Lexer:
 
     def lex(self):
         while self.curr_char != None:
-            loc = self.get_loc()[:]
+            loc = self.loc[:]
             if self.curr_char.isspace():
                 self.advance()
                 continue

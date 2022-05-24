@@ -13,7 +13,7 @@ class Token:
     def __init__(self, typ, value, loc):
         self.typ = typ
         self.value = value
-        self.loc = (loc[0], loc[1] + 1)
+        self.loc = loc
         self.raw = str(self.value)
 
     def __repr__(self):
