@@ -332,7 +332,7 @@ def generate_x86_64_nasm_linux(ir):
 
     return buffer
 
-def resolve_imports(ir):
+def resolve_imports(ir, addr):
     for i, op in enumerate(ir):
         if op[0] == IRKind.Import:
             module = op[1]
@@ -342,15 +342,18 @@ def resolve_imports(ir):
                 print(f"{module} doesn't exist")
                 exit(1)
             tokens = list(Lexer(mod_path).lex())
-            mod_ir = resolve_imports(list(Parser(mod_path, tokens).parse()))
+            parser = Parser(mod_path, tokens)
+            parser.addr = addr
+            mod_ir = list(parser.parse())
+            mod_ir = resolve_imports(mod_ir, parser.addr)
             ir.pop(i)
             ir = ir[:i] + mod_ir + ir[i:]
     return ir
 
-def ir_passes(ir):
+def ir_passes(ir, addr):
     data = {}
     data['consts'] = {}
-    ir = resolve_imports(ir)
+    ir = resolve_imports(ir, addr)
     ir, _ = expand_const(ir, data)
     return ir
 
@@ -416,7 +419,7 @@ def execute(flag, program_file):
     tokens = list(lexer.lex())
     parser = Parser(program_file, tokens)
     ir = list(parser.parse())
-    ir = ir_passes(ir)
+    ir = ir_passes(ir, parser.addr)
 
     if flag == "-r":
         exec_name = compile_program(ir, program_file)
