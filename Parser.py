@@ -31,6 +31,7 @@ class BinaryKind(Enum):
     AND = auto()
     OR = auto()
     EQ = auto()
+    NOTEQ = auto()
 
 BinaryOps = {
     TokenKind.PLUS       : BinaryKind.ADD,
@@ -44,6 +45,7 @@ BinaryOps = {
     TokenKind.AMPERSAND2 : BinaryKind.AND,
     TokenKind.PIPE2      : BinaryKind.OR,
     TokenKind.EQ2        : BinaryKind.EQ,
+    TokenKind.BANGEQ     : BinaryKind.NOTEQ,
 }
 
 expressions = [

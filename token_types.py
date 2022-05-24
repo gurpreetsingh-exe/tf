@@ -88,12 +88,14 @@ class TokenKind(Enum):
     AMPERSAND   = auto()  # `&`
     PIPE        = auto()  # `|`
     TILDE       = auto()  # `~`
+    BANG        = auto()  # `!`
 
     LT2         = auto()  # `<<`
     GT2         = auto()  # `>>`
     PIPE2       = auto()  # `||`
     AMPERSAND2  = auto()  # `&&`
     EQ2         = auto()  # `==`
+    BANGEQ      = auto()  # `!=`
 
     EOF         = auto()
     UNDEFINED   = auto()
@@ -133,9 +135,11 @@ Punctuators = {
     '&' : TokenKind.AMPERSAND,
     '|' : TokenKind.PIPE,
     '~' : TokenKind.TILDE,
+    '!' : TokenKind.BANG,
     '<<': TokenKind.LT2,
     '>>': TokenKind.GT2,
     '&&': TokenKind.AMPERSAND2,
     '||': TokenKind.PIPE2,
     '==': TokenKind.EQ2,
+    '!=': TokenKind.BANGEQ,
 }
