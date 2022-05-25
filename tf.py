@@ -446,7 +446,12 @@ def type_chk(ir, data, new_scope=False):
             for typ in sig[1]:
                 stack.append(typ)
             data['funcs'].append({'sym': node[1], 'sig': sig[1:]})
-            type_chk(node[3], data, True)
+            if sig[3]:
+                if not sig[2]:
+                    emit_error(f"`{node[1]}` expects to return `{sig[3]}` but no return statement found", node)
+            data = type_chk(node[3], data, True)
+            stack = data['stack']
+            unhandled_stack_error(stack, node, f"Unhandled data in `{data['func_scope']}()`, consider dropping {len(stack)} {value_or_values(stack)}")
         elif node[0] == IRKind.Intrinsic:
             if node[1] == 'print':
                 stack, typ = pop_without_underflow(stack, node)
@@ -516,11 +521,17 @@ def type_chk(ir, data, new_scope=False):
             if sig[1]:
                 stack.append(sig[2])
         elif node[0] == IRKind.If:
-            assert False, "Not implemented yet"
+            stack, cond = pop_without_underflow(stack, node)
+            if cond != "bool":
+                emit_error(f"`if` expects a `bool` but found `{cond}`", node)
+            data = type_chk(node[1], data, new_scope=True)
+            stack = data['stack']
+            unhandled_stack_error(stack, node, f"Unhandled data in `if` block, consider dropping {len(stack)} {value_or_values(stack)}")
         elif node[0] == IRKind.Do:
             assert False, "Not implemented yet"
         elif node[0] == IRKind.Destruct:
-            assert False, "Not implemented yet"
+            for val in range(int(node[1])):
+                stack, typ = pop_without_underflow(stack, node)
         elif node[0] == IRKind.Let:
             check_var_redefenitions(node, data)
             for i, sym in enumerate(node[1]):
@@ -534,24 +545,27 @@ def type_chk(ir, data, new_scope=False):
             if not sig:
                 emit_error(f"function `{data['func_scope']}` is not defined?", node)
 
+            stack, typ = pop_without_underflow(stack, node)
             if sig[1] and not sig[2]:
-                emit_error(f"No return type specified for func `{data['func_scope']}` but it returns something", node)
+                emit_error(f"No return type specified for func `{data['func_scope']}` but it returns `{typ}`", node)
             elif sig[1] and sig[2]:
-                stack, typ = pop_without_underflow(stack, node)
                 if typ != sig[2]:
                     emit_error(f"func `{data['func_scope']}` returns `{typ}` but expected `{sig[2]}`", node)
 
     if new_scope:
         data['scopes'].pop()
     data['stack'] = stack
+    return data
+
+def value_or_values(stack):
+    if len(stack) == 1:
+        return "value"
+    else:
+        return "values"
+
+def unhandled_stack_error(stack, node, msg):
     if stack:
-        sz = len(stack)
-        if sz == 1:
-            val = "value"
-        else:
-            val = "values"
-        print(f"In `{data['func_scope']}`: Unhandled data on the stack, consider dropping {sz} {val}")
-        exit(1)
+        emit_error(msg, node)
 
 def ir_passes(ir, addr):
     data = {}
@@ -559,7 +573,9 @@ def ir_passes(ir, addr):
     ir = resolve_imports(ir, addr)
     ir, _ = expand_const(ir, data)
     data = { 'scopes': [], 'funcs': [], 'stack': [], 'func_scope': 'global' }
-    type_chk(ir, data)
+    data = type_chk(ir, data)
+    if data['stack']:
+        print("Unhandled data on the stack")
     return ir
 
 def expand_const(ir, data):
