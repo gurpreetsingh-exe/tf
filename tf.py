@@ -524,9 +524,18 @@ def type_chk(ir, data, new_scope=False):
             stack, cond = pop_without_underflow(stack, node)
             if cond != "bool":
                 emit_error(f"`if` expects a `bool` but found `{cond}`", node)
+            stack_snap = stack[:]
             data = type_chk(node[1], data, new_scope=True)
-            stack = data['stack']
-            unhandled_stack_error(stack, node, f"Unhandled data in `if` block, consider dropping {len(stack)} {value_or_values(stack)}")
+            data['stack'] = stack_snap
+            if not node[3]:
+                unhandled_stack_error(stack, node, f"`if` block modifies the stack, consider dropping {len(stack)} {value_or_values(stack)} or adding an `else` block with same stack order")
+            else:
+                stack_snap2 = stack[:]
+                data = type_chk(node[3], data)
+                if stack_snap2 != stack_snap:
+                    print("`if`:", stack_snap)
+                    print("`else`:", stack_snap2)
+                    emit_error(f"`else` has different stack order then `if`", node[3][-1])
         elif node[0] == IRKind.Do:
             assert False, "Not implemented yet"
         elif node[0] == IRKind.Destruct:
