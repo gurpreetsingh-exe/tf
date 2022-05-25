@@ -219,10 +219,11 @@ def generate_body(ir, data):
             buffer += generate_binary_op(op)
         elif op[0] == IRKind.Func:
             offset = 0
+            local_var_count = op[2][4]
             buffer += f"{op[1]}:\n" + \
                 "    push rbp\n" + \
                 "    mov rbp, rsp\n" + \
-                "    sub rsp, 16\n"
+                "    sub rsp, {}\n".format(local_var_count * 8)
             nargs = len(op[2][1])
             regs = arg_regs[:nargs]
             for reg in regs:
@@ -232,7 +233,7 @@ def generate_body(ir, data):
             data['funcs'][op[1]] = op[2]
             if not op[2][2]:
                 buffer += \
-                "    add rsp, 16\n" + \
+                "    add rsp, {}\n".format(local_var_count * 8) + \
                 "    pop rbp\n" + \
                 "    ret\n"
         elif op[0] == IRKind.Intrinsic:
@@ -284,7 +285,7 @@ def generate_body(ir, data):
         elif op[0] == IRKind.Return:
             buffer += \
             "    pop rax\n" + \
-            "    add rsp, 16\n" + \
+            "    add rsp, {}\n".format(op[1] * 8) + \
             "    pop rbp\n" + \
             "    ret\n"
             break
@@ -411,7 +412,7 @@ def type_chk(ir, data, new_scope=False):
         data['scopes'].append([])
     stack = data['stack']
 
-    for node in ir:
+    for id, node in enumerate(ir):
         if node[0] == IRKind.PushInt:
             stack.append("int")
         elif node[0] == IRKind.PushStr:
@@ -452,6 +453,8 @@ def type_chk(ir, data, new_scope=False):
                 if not sig[2]:
                     emit_error(f"`{node[1]}` expects to return `{sig[3]}` but no return statement found", node)
             data = type_chk(node[3], data, True)
+            node[2].append(data['locals'])
+            data['locals'] = 0
             stack = data['stack']
             unhandled_stack_error(stack, node, f"Unhandled data in `{data['func_scope']}()`, consider dropping {len(stack)} {value_or_values(stack)}")
         elif node[0] == IRKind.Intrinsic:
@@ -555,6 +558,7 @@ def type_chk(ir, data, new_scope=False):
         elif node[0] == IRKind.Let:
             check_var_redefenitions(node, data)
             for i, sym in enumerate(node[1]):
+                data['locals'] += 1
                 stack, typ = pop_without_underflow(stack, node)
                 data['scopes'][-1].append({'sym': sym, 'type': typ})
         elif node[0] == IRKind.Return:
@@ -565,6 +569,7 @@ def type_chk(ir, data, new_scope=False):
             if not sig:
                 emit_error(f"function `{data['func_scope']}` is not defined?", node)
 
+            ir[id] = node[:1] + [data['locals']] + node[1:]
             stack, typ = pop_without_underflow(stack, node)
             if sig[1] and not sig[2]:
                 emit_error(f"No return type specified for func `{data['func_scope']}` but it returns `{typ}`", node)
@@ -592,7 +597,7 @@ def ir_passes(ir, addr):
     data['consts'] = {}
     ir = resolve_imports(ir, addr)
     ir, _ = expand_const(ir, data)
-    data = { 'scopes': [], 'funcs': [], 'stack': [], 'func_scope': 'global' }
+    data = { 'scopes': [], 'funcs': [], 'stack': [], 'func_scope': 'global', 'locals': 0 }
     data = type_chk(ir, data)
     if data['stack']:
         print("Unhandled data on the stack")
