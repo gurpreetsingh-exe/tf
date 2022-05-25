@@ -365,11 +365,195 @@ def resolve_imports(ir, addr):
             ir = ir[:i] + mod_ir + ir[i:]
     return ir
 
+def emit_error(msg, node):
+    loc = node[-1]
+    loc = [loc[0] + 1, loc[1] + 1]
+    print(f"{loc}: {msg}")
+    exit(1)
+
+def check_var_redefenitions(node, data):
+    for d in data['scopes'][-1]:
+        if d['sym'] in node[1]:
+            emit_error(f"`{d['sym']}` is already defined", node)
+
+def check_stack_underflow(stack, node):
+    if not stack:
+        emit_error("STACK UNDERFLOW: attempt to pop from an empty stack", node)
+
+def pop_without_underflow(stack, node):
+    check_stack_underflow(stack, node)
+    last = stack.pop()
+    return stack, last
+
+def find_func(node, data):
+    for fn in data:
+        if node[1] == fn['sym']:
+            return fn
+
+    emit_error(f"`{node[1]}` is not defined", node)
+
+def check_binary_op(node, stack, expected, result):
+    stack, rhs = pop_without_underflow(stack, node)
+    stack, lhs = pop_without_underflow(stack, node)
+    if lhs not in expected or rhs not in expected:
+        emit_error(f"expected {expected} for {node[1]} but got `{lhs}` and `{rhs}`", node)
+    stack.append(result)
+    return stack
+
+def type_chk(ir, data, new_scope=False):
+    if new_scope:
+        data['scopes'].append([])
+    stack = data['stack']
+
+    for node in ir:
+        if node[0] == IRKind.PushInt:
+            stack.append("int")
+        elif node[0] == IRKind.PushStr:
+            stack.append("str")
+        elif node[0] == IRKind.PushVar:
+            typ = None
+            for i in reversed(range(len(data['scopes']))):
+                for d in data['scopes'][i]:
+                    if node[1] == d['sym']:
+                        typ = d['type']
+                        break
+            if typ != None:
+                stack.append(typ)
+            else:
+                emit_error(f"`{node[1]}` is not defined", node)
+        elif node[0] == IRKind.Binary:
+            if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR]:
+                stack = check_binary_op(node, stack, {"int"}, "int")
+            elif node[1] in [BinaryKind.LT, BinaryKind.GT]:
+                stack = check_binary_op(node, stack, {"int"}, "bool")
+            elif node[1] in [BinaryKind.AND, BinaryKind.OR]:
+                stack = check_binary_op(node, stack, {"bool"}, "bool")
+            elif node[1] in [BinaryKind.EQ, BinaryKind.NOTEQ]:
+                stack = check_binary_op(node, stack, {"int", "bool"}, "bool")
+            else:
+                emit_error(f"Unexpected binary-op `{node[1]}`", node)
+        elif node[0] == IRKind.Func:
+            sig = node[2]
+            data['func_scope'] = node[1]
+            if sig[0] != IRKind.FuncSign:
+                emit_error(f"`{node[1]}` does not have a proper signature", node)
+            for typ in sig[1]:
+                stack.append(typ)
+            data['funcs'].append({'sym': node[1], 'sig': sig[1:]})
+            type_chk(node[3], data, True)
+        elif node[0] == IRKind.Intrinsic:
+            if node[1] == 'print':
+                stack, typ = pop_without_underflow(stack, node)
+                if typ not in {"int", "bool"}:
+                    emit_error(f"`{node[1]}` expects an `int` or `bool` but `{typ}` was given", node)
+            elif node[1] == 'syscall':
+                stack, typ = pop_without_underflow(stack, node)
+                if typ not in {"int"}:
+                    emit_error(f"`{node[1]}` expects an `int` but `{typ}` was given", node)
+                stack.append("int")
+            elif node[1] == 'drop':
+                stack, _ = pop_without_underflow(stack, node)
+            elif node[1] == 'swap':
+                stack, lhs = pop_without_underflow(stack, node)
+                stack, rhs = pop_without_underflow(stack, node)
+                stack += [lhs, rhs]
+            elif node[1] == 'dup':
+                stack, typ = pop_without_underflow(stack, node)
+                stack += [typ, typ]
+            elif node[1] == 'over':
+                stack, lsh = pop_without_underflow(stack, node)
+                stack, rsh = pop_without_underflow(stack, node)
+                stack += [rhs, lhs, rhs]
+            elif node[1] == 'rot':
+                stack, one = pop_without_underflow(stack, node)
+                stack, two = pop_without_underflow(stack, node)
+                stack, three = pop_without_underflow(stack, node)
+                stack += [two, one, three]
+            elif node[1] == 'mem':
+                stack.append("int")
+            elif node[1] == 'read8':
+                stack, addr = pop_without_underflow(stack, node)
+                if addr not in {"str", "int"}:
+                    emit_error(f"Cannot read `{addr}`", node)
+                stack.append("int")
+            elif node[1] == 'write8':
+                stack, addr = pop_without_underflow(stack, node)
+                if addr not in {"int"}:
+                    emit_error(f"Cannot write to `{addr}`", node)
+                stack, val = pop_without_underflow(stack, node)
+                if val not in {"int"}:
+                    emit_error(f"Expected `int` but got `{val}`", node)
+            elif node[1] == 'read64':
+                stack, addr = pop_without_underflow(stack, node)
+                if addr not in {"str", "int"}:
+                    emit_error(f"Cannot read `{addr}`", node)
+                stack.append("int")
+            elif node[1] == 'write64':
+                stack, addr = pop_without_underflow(stack, node)
+                if addr not in {"int"}:
+                    emit_error(f"Cannot write to `{addr}`", node)
+                stack, val = pop_without_underflow(stack, node)
+                if val not in {"int"}:
+                    emit_error(f"Expected `int` but got `{val}`", node)
+            elif node[1] == 'divmod':
+                assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
+            else:
+                print(f"Undefined intrinsic {node[1]}")
+                exit(1)
+        elif node[0] == IRKind.Call:
+            fn = find_func(node, data['funcs'])
+            sig = fn['sig']
+            for exp_typ in reversed(sig[0]):
+                stack, real_typ = pop_without_underflow(stack, node)
+                if real_typ != exp_typ:
+                    emit_error(f"`{fn['sym']}` Expected {exp_typ} but got {real_typ}", node)
+            if sig[1]:
+                stack.append(sig[2])
+        elif node[0] == IRKind.If:
+            assert False, "Not implemented yet"
+        elif node[0] == IRKind.Do:
+            assert False, "Not implemented yet"
+        elif node[0] == IRKind.Destruct:
+            assert False, "Not implemented yet"
+        elif node[0] == IRKind.Let:
+            check_var_redefenitions(node, data)
+            for i, sym in enumerate(node[1]):
+                stack, typ = pop_without_underflow(stack, node)
+                data['scopes'][-1].append({'sym': sym, 'type': typ})
+        elif node[0] == IRKind.Return:
+            sig = None
+            for fn in data['funcs']:
+                if data['func_scope'] == fn['sym']:
+                    sig = fn['sig']
+            if not sig:
+                emit_error(f"function `{data['func_scope']}` is not defined?", node)
+
+            if sig[1] and not sig[2]:
+                emit_error(f"No return type specified for func `{data['func_scope']}` but it returns something", node)
+            elif sig[1] and sig[2]:
+                stack, typ = pop_without_underflow(stack, node)
+                if typ != sig[2]:
+                    emit_error(f"func `{data['func_scope']}` returns `{typ}` but expected `{sig[2]}`", node)
+
+    if new_scope:
+        data['scopes'].pop()
+    data['stack'] = stack
+    if stack:
+        sz = len(stack)
+        if sz == 1:
+            val = "value"
+        else:
+            val = "values"
+        print(f"In `{data['func_scope']}`: Unhandled data on the stack, consider dropping {sz} {val}")
+        exit(1)
+
 def ir_passes(ir, addr):
     data = {}
     data['consts'] = {}
     ir = resolve_imports(ir, addr)
     ir, _ = expand_const(ir, data)
+    data = { 'scopes': [], 'funcs': [], 'stack': [], 'func_scope': 'global' }
+    type_chk(ir, data)
     return ir
 
 def expand_const(ir, data):
