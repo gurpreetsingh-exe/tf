@@ -128,7 +128,7 @@ class Parser:
             elif self.curr_tok.typ == TokenKind.INTRINSIC:
                 intrinsic = self.curr_tok.value
                 self.advance()
-                yield [IRKind.Intrinsic, intrinsic.value, start_loc]
+                yield [IRKind.Intrinsic, Intrinsics[intrinsic.value], start_loc]
             elif self.curr_tok.typ == TokenKind.IDENT:
                 symbol = self.expect(TokenKind.IDENT).value
                 if self.curr_tok.typ == TokenKind.LPAREN:

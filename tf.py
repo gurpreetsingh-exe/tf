@@ -106,37 +106,37 @@ def generate_binary_op(op):
 
 def generate_intrinsic(ir):
     match ir[1]:
-        case 'print':
+        case IntrinsicKind.PRINT:
             return \
             "    pop rdi\n" + \
             "    call print\n"
-        case 'syscall':
+        case IntrinsicKind.SYSCALL:
             return \
             "    pop rax\n" + \
             "    syscall\n" + \
             "    push rax\n"
-        case 'drop':
+        case IntrinsicKind.DROP:
             return \
             "    pop rax\n"
-        case 'swap':
+        case IntrinsicKind.SWAP:
             return \
             "    pop rax\n" + \
             "    pop rbx\n" + \
             "    push rax\n" + \
             "    push rbx\n"
-        case 'dup':
+        case IntrinsicKind.DUP:
             return \
             "    pop rax\n" + \
             "    push rax\n" + \
             "    push rax\n"
-        case 'over':
+        case IntrinsicKind.OVER:
             return \
             "    pop rax\n" + \
             "    pop rbx\n" + \
             "    push rbx\n" + \
             "    push rax\n" + \
             "    push rbx\n"
-        case 'rot':
+        case IntrinsicKind.ROT:
             return \
             "    pop rax\n" + \
             "    pop rbx\n" + \
@@ -144,36 +144,36 @@ def generate_intrinsic(ir):
             "    push rbx\n" + \
             "    push rax\n" + \
             "    push rcx\n"
-        case 'mem':
+        case IntrinsicKind.MEM:
             # TODO: remove this intrinsic?? because we can use mmap syscall
             # for memory allocation
             return \
             "    push mem\n"
-        case 'cast_int':
+        case IntrinsicKind.CAST_INT:
             return ""
-        case 'read8':
+        case IntrinsicKind.READ8:
             return \
             "    pop rax\n" + \
             "    xor rbx, rbx\n" + \
             "    mov bl, [rax]\n" + \
             "    push rbx\n"
-        case 'write8':
+        case IntrinsicKind.WRITE8:
             return \
             "    pop rbx\n" + \
             "    pop rax\n" + \
             "    mov [rax], bl\n"
-        case 'read64':
+        case IntrinsicKind.READ64:
             return \
             "    pop rax\n" + \
             "    xor rbx, rbx\n" + \
             "    mov rbx, [rax]\n" + \
             "    push rbx\n"
-        case 'write64':
+        case IntrinsicKind.WRITE64:
             return \
             "    pop rbx\n" + \
             "    pop rax\n" + \
             "    mov [rax], rbx\n"
-        case 'divmod':
+        case IntrinsicKind.DIVMOD:
             return \
             "    pop rbx\n" + \
             "    pop rax\n" + \
@@ -455,63 +455,63 @@ def type_chk(ir, data, new_scope=False):
             stack = data['stack']
             unhandled_stack_error(stack, node, f"Unhandled data in `{data['func_scope']}()`, consider dropping {len(stack)} {value_or_values(stack)}")
         elif node[0] == IRKind.Intrinsic:
-            if node[1] == 'print':
+            if node[1] == IntrinsicKind.PRINT:
                 stack, typ = pop_without_underflow(stack, node)
                 if typ not in {"int", "bool"}:
                     emit_error(f"`{node[1]}` expects an `int` or `bool` but `{typ}` was given", node)
-            elif node[1] == 'syscall':
+            elif node[1] == IntrinsicKind.SYSCALL:
                 stack, typ = pop_without_underflow(stack, node)
                 if typ not in {"int"}:
                     emit_error(f"`{node[1]}` expects an `int` but `{typ}` was given", node)
                 stack.append("int")
-            elif node[1] == 'drop':
+            elif node[1] == IntrinsicKind.DROP:
                 stack, _ = pop_without_underflow(stack, node)
-            elif node[1] == 'swap':
+            elif node[1] == IntrinsicKind.SWAP:
                 stack, lhs = pop_without_underflow(stack, node)
                 stack, rhs = pop_without_underflow(stack, node)
                 stack += [lhs, rhs]
-            elif node[1] == 'dup':
+            elif node[1] == IntrinsicKind.DUP:
                 stack, typ = pop_without_underflow(stack, node)
                 stack += [typ, typ]
-            elif node[1] == 'over':
+            elif node[1] == IntrinsicKind.OVER:
                 stack, lsh = pop_without_underflow(stack, node)
                 stack, rsh = pop_without_underflow(stack, node)
                 stack += [rhs, lhs, rhs]
-            elif node[1] == 'rot':
+            elif node[1] == IntrinsicKind.ROT:
                 stack, one = pop_without_underflow(stack, node)
                 stack, two = pop_without_underflow(stack, node)
                 stack, three = pop_without_underflow(stack, node)
                 stack += [two, one, three]
-            elif node[1] == 'mem':
+            elif node[1] == IntrinsicKind.MEM:
                 stack.append("int")
-            elif node[1] == 'cast_int':
+            elif node[1] == IntrinsicKind.CAST_INT:
                 stack, typ = pop_without_underflow(stack, node)
                 stack.append("int")
-            elif node[1] == 'read8':
+            elif node[1] == IntrinsicKind.READ8:
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {"str", "int"}:
                     emit_error(f"Cannot read `{addr}`", node)
                 stack.append("int")
-            elif node[1] == 'write8':
+            elif node[1] == IntrinsicKind.WRITE8:
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {"int"}:
                     emit_error(f"Cannot write to `{addr}`", node)
                 stack, val = pop_without_underflow(stack, node)
                 if val not in {"int"}:
                     emit_error(f"Expected `int` but got `{val}`", node)
-            elif node[1] == 'read64':
+            elif node[1] == IntrinsicKind.READ64:
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {"str", "int"}:
                     emit_error(f"Cannot read `{addr}`", node)
                 stack.append("int")
-            elif node[1] == 'write64':
+            elif node[1] == IntrinsicKind.WRITE64:
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {"int"}:
                     emit_error(f"Cannot write to `{addr}`", node)
                 stack, val = pop_without_underflow(stack, node)
                 if val not in {"int"}:
                     emit_error(f"Expected `int` but got `{val}`", node)
-            elif node[1] == 'divmod':
+            elif node[1] == IntrinsicKind.DIVMOD:
                 assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
             else:
                 assert False, f"Undefined intrinsic {node[1]}"
