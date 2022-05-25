@@ -6,6 +6,7 @@ class IRKind(Enum):
     Block = auto()
     PushInt = auto()
     PushStr = auto()
+    PushBool = auto()
     PushVar = auto()
     Binary = auto()
     Intrinsic = auto()
@@ -116,6 +117,8 @@ class Parser:
                 elif lit.typ == LiteralKind.STR:
                     str_addr = self.inc_addr_get()
                     ir = [IRKind.PushStr, lit.value, str_addr]
+                elif lit.typ == LiteralKind.BOOL:
+                    ir = [IRKind.PushBool, lit.value]
                 self.advance()
                 yield ir + [start_loc]
             elif self.curr_tok.typ in BinaryOps:

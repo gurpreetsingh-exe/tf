@@ -65,6 +65,9 @@ class Lexer:
                 elif word in Intrinsics:
                     intrinsic = Intrinsic(Intrinsics[word], word)
                     yield Token(TokenKind.INTRINSIC, intrinsic, loc)
+                elif word in {'true', 'false'}:
+                    lit = Literal_(LiteralKind.BOOL, word)
+                    yield Token(TokenKind.LITERAL, lit, loc)
                 else:
                     yield Token(TokenKind.IDENT, word, loc)
 
