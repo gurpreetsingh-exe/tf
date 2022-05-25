@@ -149,6 +149,8 @@ def generate_intrinsic(ir):
             # for memory allocation
             return \
             "    push mem\n"
+        case 'cast_int':
+            return ""
         case 'read8':
             return \
             "    pop rax\n" + \
@@ -482,6 +484,9 @@ def type_chk(ir, data, new_scope=False):
                 stack += [two, one, three]
             elif node[1] == 'mem':
                 stack.append("int")
+            elif node[1] == 'cast_int':
+                stack, typ = pop_without_underflow(stack, node)
+                stack.append("int")
             elif node[1] == 'read8':
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {"str", "int"}:
@@ -509,8 +514,7 @@ def type_chk(ir, data, new_scope=False):
             elif node[1] == 'divmod':
                 assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
             else:
-                print(f"Undefined intrinsic {node[1]}")
-                exit(1)
+                assert False, f"Undefined intrinsic {node[1]}"
         elif node[0] == IRKind.Call:
             fn = find_func(node, data['funcs'])
             sig = fn['sig']
