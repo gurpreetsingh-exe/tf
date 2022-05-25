@@ -149,7 +149,7 @@ def generate_intrinsic(ir):
             # for memory allocation
             return \
             "    push mem\n"
-        case IntrinsicKind.CAST_INT:
+        case IntrinsicKind.CAST_INT | IntrinsicKind.CAST_STR:
             return ""
         case IntrinsicKind.READ8:
             return \
@@ -487,6 +487,9 @@ def type_chk(ir, data, new_scope=False):
             elif node[1] == IntrinsicKind.CAST_INT:
                 stack, typ = pop_without_underflow(stack, node)
                 stack.append("int")
+            elif node[1] == IntrinsicKind.CAST_STR:
+                stack, typ = pop_without_underflow(stack, node)
+                stack.append("str")
             elif node[1] == IntrinsicKind.READ8:
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {"str", "int"}:

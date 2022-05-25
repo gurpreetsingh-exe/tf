@@ -22,6 +22,7 @@ class IntrinsicKind(Enum):
     ROT = auto()
     MEM = auto()
     CAST_INT = auto()
+    CAST_STR = auto()
 
     READ8 = auto()
     WRITE8 = auto()
@@ -40,6 +41,7 @@ Intrinsics = {
     "rot"     : IntrinsicKind.ROT,
     "mem"     : IntrinsicKind.MEM,
     "cast_int": IntrinsicKind.CAST_INT,
+    "cast_str": IntrinsicKind.CAST_STR,
     "read8"   : IntrinsicKind.READ8,
     "write8"  : IntrinsicKind.WRITE8,
     "read64"  : IntrinsicKind.READ64,
