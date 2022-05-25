@@ -414,6 +414,8 @@ def type_chk(ir, data, new_scope=False):
             stack.append("int")
         elif node[0] == IRKind.PushStr:
             stack.append("str")
+        elif node[0] == IRKind.PushBool:
+            stack.append("bool")
         elif node[0] == IRKind.PushVar:
             typ = None
             for i in reversed(range(len(data['scopes']))):
