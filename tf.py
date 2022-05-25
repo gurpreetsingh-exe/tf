@@ -205,7 +205,7 @@ def generate_body(ir, data):
             buffer += f"    push {op[1]}\n"
         elif op[0] == IRKind.PushStr:
             buffer += f"    push S{op[2]}\n"
-            data['strings'].append(op[1:])
+            data['strings'].append(op[1:-1])
         elif op[0] == IRKind.PushVar:
             off = find_var(data['scopes'], op[1])
             buffer += f"    push QWORD [rbp - {off}]\n"
@@ -217,6 +217,10 @@ def generate_body(ir, data):
                 "    push rbp\n" + \
                 "    mov rbp, rsp\n" + \
                 "    sub rsp, 16\n"
+            nargs = len(op[2][1])
+            regs = arg_regs[:nargs]
+            for reg in regs:
+                buffer += f"    push {reg}\n"
             buf, data = generate_body(op[3], data)
             buffer += buf
             data['funcs'][op[1]] = op[2]
@@ -270,7 +274,7 @@ def generate_body(ir, data):
             for x, v in enumerate(op[1]):
                 offset += 8
                 data['scopes'][-1].append({'sym': v, 'offset': offset})
-                buffer += f"    mov [rbp - {offset}], {reg[x]}\n"
+                buffer += f"    pop {reg[x]}\n    mov [rbp - {offset}], {reg[x]}\n"
         elif op[0] == IRKind.Return:
             buffer += \
             "    pop rax\n" + \
