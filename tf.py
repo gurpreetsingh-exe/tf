@@ -206,6 +206,10 @@ def generate_body(ir, data):
         elif op[0] == IRKind.PushStr:
             buffer += f"    push S{op[2]}\n"
             data['strings'].append(op[1:-1])
+        elif op[0] == IRKind.PushBool:
+            val = 1 if op[1] == 'true' else 0
+            buffer += f"    mov BYTE al, {val}\n" + \
+                "    push rax\n"
         elif op[0] == IRKind.PushVar:
             off = find_var(data['scopes'], op[1])
             buffer += f"    push QWORD [rbp - {off}]\n"
