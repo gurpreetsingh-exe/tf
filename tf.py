@@ -541,7 +541,11 @@ def type_chk(ir, data, new_scope=False):
                     print("`else`:", stack_snap2)
                     emit_error(f"`else` has different stack order then `if`", node[3][-1])
         elif node[0] == IRKind.Do:
-            assert False, "Not implemented yet"
+            stack, cond = pop_without_underflow(stack, node)
+            if cond != "bool":
+                emit_error(f"`do` expects a `bool` but found `{cond}`", node)
+            data = type_chk(node[1], data, new_scope=True)
+            stack = data['stack']
         elif node[0] == IRKind.Destruct:
             for val in range(int(node[1])):
                 stack, typ = pop_without_underflow(stack, node)
