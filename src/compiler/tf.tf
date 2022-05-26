@@ -32,7 +32,6 @@ func __tf_dealloc(int, int) {
 // # Arguments
 //
 // * `str` - path of the file
-// * `int` - ptr for storing the contents
 func read_file(str) {
     // get file descriptor to read the file
     O_RDONLY 0 open() let fd;
