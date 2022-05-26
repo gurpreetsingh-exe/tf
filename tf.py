@@ -650,7 +650,7 @@ def run_command(args):
 
 def compile_program(ir, program_file):
     buffer = generate_x86_64_nasm_linux(ir)
-    out_filename = program_file.split('.')[0]
+    out_filename = os.path.join(program_file.parent, program_file.stem)
 
     with open(out_filename + ".asm", "w") as out:
         out.write(buffer)
@@ -661,17 +661,21 @@ def compile_program(ir, program_file):
     return out_filename
 
 def execute(flag, program_file):
-    lexer = Lexer(program_file)
+    filepath = Path(program_file).absolute()
+    if not filepath.exists():
+        print(f"tf: `{program_file}` doesn't exist")
+        exit(1)
+    lexer = Lexer(filepath)
     tokens = list(lexer.lex())
-    parser = Parser(program_file, tokens)
+    parser = Parser(filepath, tokens)
     ir = list(parser.parse())
     ir = ir_passes(ir, parser.addr)
 
     if flag == "-r":
-        exec_name = compile_program(ir, program_file)
+        exec_name = compile_program(ir, filepath)
         run_command(["./" + exec_name])
     elif flag == "-c":
-        compile_program(ir, program_file)
+        compile_program(ir, filepath)
     else:
         print(f"Unknown flag {flag}")
         exit(1)
