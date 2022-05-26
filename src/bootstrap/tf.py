@@ -5,13 +5,16 @@ from pathlib import Path
 import sys
 import subprocess
 
-from token_types import *
-from Token import *
-from Lexer import Lexer
-from Parser import BinaryKind, IRKind, Parser
+from .token_types import *
+from .Token import *
+from .Lexer import Lexer
+from .Parser import BinaryKind, IRKind, Parser
 
 offset = 0
 arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
+compiler_src_path = Path(__file__).parent.parent
+libpath = os.path.join(compiler_src_path, "library")
+root = None # root is known after src file is provided to the compiler for compilation
 
 def generate_binary_op(op):
     match op[1]:
@@ -357,12 +360,18 @@ def generate_x86_64_nasm_linux(ir):
 def resolve_imports(ir, addr):
     for i, op in enumerate(ir):
         if op[0] == IRKind.Import:
+            global root
+            global libpath
             module = op[1]
-            path = Path(__file__).parent
+            path = Path(root).parent
             mod_path = os.path.join(path, module) + ".tf"
-            if not Path(mod_path).is_file():
-                print(f"{module} doesn't exist")
-                exit(1)
+            # if not found then look for the module in standard library
+            if not Path(mod_path).exists():
+                mod_path = os.path.join(libpath, module) + ".tf"
+                # if the file is still not found then it doesn't exist
+                if not Path(mod_path).exists():
+                    print(f"tf: module `{module}` doesn't exist")
+                    exit(1)
             tokens = list(Lexer(mod_path).lex())
             parser = Parser(mod_path, tokens)
             parser.addr = addr
@@ -665,6 +674,8 @@ def execute(flag, program_file):
     if not filepath.exists():
         print(f"tf: `{program_file}` doesn't exist")
         exit(1)
+    global root
+    root = filepath
     lexer = Lexer(filepath)
     tokens = list(lexer.lex())
     parser = Parser(filepath, tokens)
