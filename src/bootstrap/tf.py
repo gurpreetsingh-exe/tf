@@ -486,8 +486,8 @@ def type_chk(ir, data, new_scope=False):
                 stack, typ = pop_without_underflow(stack, node)
                 stack += [typ, typ]
             elif node[1] == IntrinsicKind.OVER:
-                stack, lsh = pop_without_underflow(stack, node)
-                stack, rsh = pop_without_underflow(stack, node)
+                stack, lhs = pop_without_underflow(stack, node)
+                stack, rhs = pop_without_underflow(stack, node)
                 stack += [rhs, lhs, rhs]
             elif node[1] == IntrinsicKind.ROT:
                 stack, one = pop_without_underflow(stack, node)
