@@ -5,3 +5,4 @@ tests/
 make.sh
 main*
 test*
+Makefile
