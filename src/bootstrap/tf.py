@@ -26,8 +26,8 @@ def generate_binary_op(op):
             "    push rax\n"
         case BinaryKind.SUB:
             return \
-            "    pop rax\n" + \
             "    pop rbx\n" + \
+            "    pop rax\n" + \
             "    sub rax, rbx\n" + \
             "    push rax\n"
         case BinaryKind.MUL:
