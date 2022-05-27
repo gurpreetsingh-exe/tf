@@ -30,6 +30,10 @@ const MAP_ANON 32
 const MAP_FILE 0
 
 const O_RDONLY 0
+const O_WRONLY 1
+const O_RDWR 2
+const O_APPEND 1024
+const O_CREAT 64
 
 const STATBUF_SIZE 144
 
@@ -53,7 +57,8 @@ func:int read(int, int, int) {
 }
 
 func write(int, str, int) {
-    ~[3] SYS_WRITE syscall drop
+    let fd, buf, size;
+    fd buf size ~[3] SYS_WRITE syscall drop
 }
 
 // TODO: there is a stack alignment bug which is why stack vars
