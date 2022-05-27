@@ -40,7 +40,8 @@ def generate_binary_op(op):
             return \
             "    pop rbx\n" + \
             "    pop rax\n" + \
-            "    div rbx\n" + \
+            "    cdq\n" + \
+            "    idiv rbx\n" + \
             "    push rax\n"
         case BinaryKind.LT:
             return \
@@ -108,7 +109,8 @@ def generate_binary_op(op):
             "    pop rbx\n" + \
             "    pop rax\n" + \
             "    xor rdx, rdx\n" + \
-            "    div rbx\n" + \
+            "    cdq\n" + \
+            "    idiv rbx\n" + \
             "    push rdx\n"
         case _:
             print("Unexpected binary-op")
