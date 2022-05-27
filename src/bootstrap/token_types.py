@@ -94,6 +94,7 @@ class TokenKind(Enum):
     PIPE        = auto()  # `|`
     TILDE       = auto()  # `~`
     BANG        = auto()  # `!`
+    PERCENT     = auto()  # `%`
 
     LT2         = auto()  # `<<`
     GT2         = auto()  # `>>`
@@ -141,6 +142,7 @@ Punctuators = {
     '|' : TokenKind.PIPE,
     '~' : TokenKind.TILDE,
     '!' : TokenKind.BANG,
+    '%' : TokenKind.PERCENT,
     '<<': TokenKind.LT2,
     '>>': TokenKind.GT2,
     '&&': TokenKind.AMPERSAND2,

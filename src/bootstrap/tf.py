@@ -103,6 +103,13 @@ def generate_binary_op(op):
             "    cmp rax, rbx\n" + \
             "    setne al\n" + \
             "    push rax\n"
+        case BinaryKind.MOD:
+            return \
+            "    pop rbx\n" + \
+            "    pop rax\n" + \
+            "    xor rdx, rdx\n" + \
+            "    div rbx\n" + \
+            "    push rdx\n"
         case _:
             print("Unexpected binary-op")
             exit(1)
@@ -440,7 +447,7 @@ def type_chk(ir, data, new_scope=False):
             else:
                 emit_error(f"`{node[1]}` is not defined", node)
         elif node[0] == IRKind.Binary:
-            if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR]:
+            if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
                 stack = check_binary_op(node, stack, {"int"}, "int")
             elif node[1] in [BinaryKind.LT, BinaryKind.GT]:
                 stack = check_binary_op(node, stack, {"int"}, "bool")

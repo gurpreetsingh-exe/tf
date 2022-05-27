@@ -33,6 +33,7 @@ class BinaryKind(Enum):
     OR = auto()
     EQ = auto()
     NOTEQ = auto()
+    MOD = auto()
 
 BinaryOps = {
     TokenKind.PLUS       : BinaryKind.ADD,
@@ -47,6 +48,7 @@ BinaryOps = {
     TokenKind.PIPE2      : BinaryKind.OR,
     TokenKind.EQ2        : BinaryKind.EQ,
     TokenKind.BANGEQ     : BinaryKind.NOTEQ,
+    TokenKind.PERCENT    : BinaryKind.MOD,
 }
 
 expressions = [
