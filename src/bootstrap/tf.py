@@ -40,7 +40,7 @@ def generate_binary_op(op):
             return \
             "    pop rbx\n" + \
             "    pop rax\n" + \
-            "    cdq\n" + \
+            "    cqo\n" + \
             "    idiv rbx\n" + \
             "    push rax\n"
         case BinaryKind.LT:
@@ -111,7 +111,6 @@ def generate_binary_op(op):
             "    pop rbx\n" + \
             "    pop rax\n" + \
             "    xor rdx, rdx\n" + \
-            "    cdq\n" + \
             "    idiv rbx\n" + \
             "    push rdx\n"
         case _:
