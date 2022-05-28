@@ -34,7 +34,7 @@ def generate_binary_op(op):
             return \
             "    pop rax\n" + \
             "    pop rbx\n" + \
-            "    mul rbx\n" + \
+            "    imul rax, rbx\n" + \
             "    push rax\n"
         case BinaryKind.DIV:
             return \
@@ -49,6 +49,7 @@ def generate_binary_op(op):
             "    pop rax\n" + \
             "    sub rbx, 1\n" + \
             "    cmp rax, rbx\n" + \
+            "    mov rax, 0\n" + \
             "    setle al\n" + \
             "    push rax\n"
         case BinaryKind.GT:
@@ -56,6 +57,7 @@ def generate_binary_op(op):
             "    pop rbx\n" + \
             "    pop rax\n" + \
             "    cmp rax, rbx\n" + \
+            "    mov rax, 0\n" + \
             "    setg al\n" + \
             "    push rax\n"
         case BinaryKind.SHL:
