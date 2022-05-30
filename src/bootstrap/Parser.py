@@ -1,4 +1,4 @@
-from .token_types import *
+from token_types import *
 
 class IRKind(Enum):
     Func = auto()

@@ -5,11 +5,10 @@ from pathlib import Path
 import sys
 import subprocess
 
-# TODO: fix these imports
-from .token_types import *
-from .Token import *
-from .Lexer import Lexer
-from .Parser import BinaryKind, IRKind, Parser
+from token_types import *
+from Token import *
+from Lexer import Lexer
+from Parser import BinaryKind, IRKind, Parser
 
 offset = 0
 arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
