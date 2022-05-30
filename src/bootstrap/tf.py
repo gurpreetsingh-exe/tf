@@ -436,6 +436,8 @@ def type_chk(ir, data, new_scope=False):
     for id, node in enumerate(ir):
         if node[0] == IRKind.PushInt:
             stack.append("int")
+        elif node[0] == IRKind.PushFloat:
+            stack.append("float")
         elif node[0] == IRKind.PushStr:
             stack.append("str")
         elif node[0] == IRKind.PushBool:
