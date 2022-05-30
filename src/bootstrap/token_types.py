@@ -12,6 +12,7 @@ class Literal_(Repr):
 class LiteralKind(Enum):
     STR = auto()
     INT = auto()
+    FLOAT = auto()
     BOOL = auto()
 
 class IntrinsicKind(Enum):
