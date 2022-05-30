@@ -219,6 +219,8 @@ def generate_body(ir, data):
         op = ir[i]
         if op[0] == IRKind.PushInt:
             buffer += f"    push {op[1]}\n"
+        elif op[0] == IRKind.PushFloat:
+            assert False, "not implemented yet"
         elif op[0] == IRKind.PushStr:
             buffer += f"    push S{op[2]}\n"
             data['strings'].append(op[1:-1])

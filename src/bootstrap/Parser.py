@@ -5,6 +5,7 @@ class IRKind(Enum):
     FuncSign = auto()
     Block = auto()
     PushInt = auto()
+    PushFloat = auto()
     PushStr = auto()
     PushBool = auto()
     PushVar = auto()
@@ -116,6 +117,8 @@ class Parser:
                 lit = self.curr_tok.value
                 if lit.typ == LiteralKind.INT:
                     ir = [IRKind.PushInt, lit.value]
+                elif lit.typ == LiteralKind.FLOAT:
+                    ir = [IRKind.PushFloat, lit.value]
                 elif lit.typ == LiteralKind.STR:
                     str_addr = self.inc_addr_get()
                     ir = [IRKind.PushStr, lit.value, str_addr]
