@@ -505,27 +505,26 @@ def find_func(node, data):
 def check_binary_op(node, stack, expected):
     stack, rhs = pop_without_underflow(stack, node)
     stack, lhs = pop_without_underflow(stack, node)
-    if "float" in [lhs, rhs] and node[1] in [BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
+    if TypeKind.FLOAT in [lhs, rhs] and node[1] in [BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
         emit_error(f"expected `int` but got `float`", node)
     if lhs not in expected or rhs not in expected:
         emit_error(f"expected {expected} for {node[1]} but got `{lhs}` and `{rhs}`", node)
     return stack, [lhs, rhs]
 
 def type_chk(ir, data, new_scope=False):
-    # TODO: use type enums instead of strings like `int`, `float`
     if new_scope:
         data['scopes'].append([])
     stack = data['stack']
 
     for id, node in enumerate(ir):
         if node[0] == IRKind.PushInt:
-            stack.append("int")
+            stack.append(TypeKind.INT)
         elif node[0] == IRKind.PushFloat:
-            stack.append("float")
+            stack.append(TypeKind.FLOAT)
         elif node[0] == IRKind.PushStr:
-            stack.append("str")
+            stack.append(TypeKind.STR)
         elif node[0] == IRKind.PushBool:
-            stack.append("bool")
+            stack.append(TypeKind.BOOL)
         elif node[0] == IRKind.PushVar:
             typ = None
             for i in reversed(range(len(data['scopes']))):
@@ -539,26 +538,26 @@ def type_chk(ir, data, new_scope=False):
                 emit_error(f"`{node[1]}` is not defined", node)
         elif node[0] == IRKind.Binary:
             if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
-                stack, operands = check_binary_op(node, stack, {"int", "float"})
-                if "float" in operands:
+                stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.FLOAT})
+                if TypeKind.FLOAT in operands:
                     ir[id][2] = TypeKind.FLOAT
-                    stack.append("float")
+                    stack.append(TypeKind.FLOAT)
                 else:
                     ir[id][2] = TypeKind.INT
-                    stack.append("int")
+                    stack.append(TypeKind.INT)
             elif node[1] in [BinaryKind.LT, BinaryKind.GT]:
-                stack, operands = check_binary_op(node, stack, {"int", "float"})
-                if "float" in operands:
+                stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.FLOAT})
+                if TypeKind.FLOAT in operands:
                     ir[id][2] = TypeKind.FLOAT
                 else:
                     ir[id][2] = TypeKind.INT
-                stack.append("bool")
+                stack.append(TypeKind.BOOL)
             elif node[1] in [BinaryKind.AND, BinaryKind.OR]:
-                stack, operands = check_binary_op(node, stack, {"bool"})
-                stack.append("bool")
+                stack, operands = check_binary_op(node, stack, {TypeKind.BOOL})
+                stack.append(TypeKind.BOOL)
             elif node[1] in [BinaryKind.EQ, BinaryKind.NOTEQ]:
-                stack, operands = check_binary_op(node, stack, {"int", "bool"})
-                stack.append("bool")
+                stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.BOOL})
+                stack.append(TypeKind.BOOL)
             else:
                 emit_error(f"Unexpected binary-op `{node[1]}`", node)
         elif node[0] == IRKind.Func:
@@ -580,13 +579,13 @@ def type_chk(ir, data, new_scope=False):
         elif node[0] == IRKind.Intrinsic:
             if node[1] == IntrinsicKind.PRINT:
                 stack, typ = pop_without_underflow(stack, node)
-                if typ not in {"int", "bool", "float", "str"}:
+                if typ not in {TypeKind.INT, TypeKind.BOOL, TypeKind.FLOAT, TypeKind.STR}:
                     emit_error(f"`{node[1]}` expects an `int`, `bool`, `float`, `str` but `{typ}` was given", node)
             elif node[1] == IntrinsicKind.SYSCALL:
                 stack, typ = pop_without_underflow(stack, node)
-                if typ not in {"int"}:
+                if typ not in {TypeKind.INT}:
                     emit_error(f"`{node[1]}` expects an `int` but `{typ}` was given", node)
-                stack.append("int")
+                stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.DROP:
                 stack, _ = pop_without_underflow(stack, node)
             elif node[1] == IntrinsicKind.SWAP:
@@ -606,36 +605,36 @@ def type_chk(ir, data, new_scope=False):
                 stack, three = pop_without_underflow(stack, node)
                 stack += [two, one, three]
             elif node[1] == IntrinsicKind.MEM:
-                stack.append("int")
+                stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.CAST_INT:
                 stack, typ = pop_without_underflow(stack, node)
-                stack.append("int")
+                stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.CAST_STR:
                 stack, typ = pop_without_underflow(stack, node)
-                stack.append("str")
+                stack.append(TypeKind.STR)
             elif node[1] == IntrinsicKind.READ8:
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {"str", "int"}:
+                if addr not in {TypeKind.STR, TypeKind.INT}:
                     emit_error(f"Cannot read `{addr}`", node)
-                stack.append("int")
+                stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.WRITE8:
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {"int"}:
+                if addr not in {TypeKind.INT}:
                     emit_error(f"Cannot write to `{addr}`", node)
                 stack, val = pop_without_underflow(stack, node)
-                if val not in {"int"}:
+                if val not in {TypeKind.INT}:
                     emit_error(f"Expected `int` but got `{val}`", node)
             elif node[1] == IntrinsicKind.READ64:
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {"str", "int"}:
+                if addr not in {TypeKind.STR, TypeKind.INT}:
                     emit_error(f"Cannot read `{addr}`", node)
-                stack.append("int")
+                stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.WRITE64:
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {"int"}:
+                if addr not in {TypeKind.INT}:
                     emit_error(f"Cannot write to `{addr}`", node)
                 stack, val = pop_without_underflow(stack, node)
-                if val not in {"int"}:
+                if val not in {TypeKind.INT}:
                     emit_error(f"Expected `int` but got `{val}`", node)
             elif node[1] == IntrinsicKind.DIVMOD:
                 assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
@@ -652,7 +651,7 @@ def type_chk(ir, data, new_scope=False):
                 stack.append(sig[2])
         elif node[0] == IRKind.If:
             stack, cond = pop_without_underflow(stack, node)
-            if cond != "bool":
+            if cond != TypeKind.BOOL:
                 emit_error(f"`if` expects a `bool` but found `{cond}`", node)
             stack_snap = stack[:]
             data = type_chk(node[1], data, new_scope=True)
@@ -668,7 +667,7 @@ def type_chk(ir, data, new_scope=False):
                     emit_error(f"`else` has different stack order then `if`", node[3][-1])
         elif node[0] == IRKind.Do:
             stack, cond = pop_without_underflow(stack, node)
-            if cond != "bool":
+            if cond != TypeKind.BOOL:
                 emit_error(f"`do` expects a `bool` but found `{cond}`", node)
             data = type_chk(node[1], data, new_scope=True)
             stack = data['stack']

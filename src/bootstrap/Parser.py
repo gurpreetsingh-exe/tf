@@ -52,6 +52,13 @@ BinaryOps = {
     TokenKind.PERCENT    : BinaryKind.MOD,
 }
 
+type_dict = {
+    "int"   : TypeKind.INT,
+    "float" : TypeKind.FLOAT,
+    "str"   : TypeKind.STR,
+    "bool"  : TypeKind.BOOL,
+}
+
 expressions = [
     TokenKind.LITERAL,
     TokenKind.INTRINSIC,
@@ -92,7 +99,7 @@ class Parser:
             typ = self.expect(TokenKind.IDENT).value
             if typ not in {'int', 'str', 'bool'}:
                 print(f"Unexpected type `{typ}`")
-            args.append(typ)
+            args.append(type_dict[typ])
             if self.curr_tok.typ == TokenKind.RPAREN:
                 break
             else:
@@ -212,7 +219,7 @@ class Parser:
                 ret_type = None
                 if self.curr_tok.typ == TokenKind.COLON:
                     self.expect(TokenKind.COLON)
-                    ret_type = self.expect(TokenKind.IDENT).value
+                    ret_type = type_dict[self.expect(TokenKind.IDENT).value]
                 symbol = self.expect(TokenKind.IDENT).value
                 sign = self.func_sign()
                 body = self.block()
