@@ -19,11 +19,17 @@ root = None # root is known after src file is provided to the compiler for compi
 def generate_binary_op(op):
     match op[1]:
         case BinaryKind.ADD:
-            return \
-            "    pop rax\n" + \
-            "    pop rbx\n" + \
-            "    add rax, rbx\n" + \
-            "    push rax\n"
+            if op[2] == TypeKind.INT:
+                return \
+                "    pop rax\n" + \
+                "    pop rbx\n" + \
+                "    add rax, rbx\n" + \
+                "    push rax\n"
+            elif op[2] == TypeKind.FLOAT:
+                return \
+                "    ;; not implemented\n"
+            else:
+                print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.SUB:
             return \
             "    pop rbx\n" + \
@@ -428,15 +434,15 @@ def find_func(node, data):
 
     emit_error(f"`{node[1]}` is not defined", node)
 
-def check_binary_op(node, stack, expected, result):
+def check_binary_op(node, stack, expected):
     stack, rhs = pop_without_underflow(stack, node)
     stack, lhs = pop_without_underflow(stack, node)
     if lhs not in expected or rhs not in expected:
         emit_error(f"expected {expected} for {node[1]} but got `{lhs}` and `{rhs}`", node)
-    stack.append(result)
-    return stack
+    return stack, [lhs, rhs]
 
 def type_chk(ir, data, new_scope=False):
+    # TODO: use type enums instead of strings like `int`, `float`
     if new_scope:
         data['scopes'].append([])
     stack = data['stack']
@@ -463,13 +469,22 @@ def type_chk(ir, data, new_scope=False):
                 emit_error(f"`{node[1]}` is not defined", node)
         elif node[0] == IRKind.Binary:
             if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
-                stack = check_binary_op(node, stack, {"int"}, "int")
+                stack, operands = check_binary_op(node, stack, {"int", "float"})
+                if "float" in operands:
+                    ir[id][2] = TypeKind.FLOAT
+                    stack.append("float")
+                else:
+                    ir[id][2] = TypeKind.INT
+                    stack.append("int")
             elif node[1] in [BinaryKind.LT, BinaryKind.GT]:
-                stack = check_binary_op(node, stack, {"int"}, "bool")
+                stack, operands = check_binary_op(node, stack, {"int"})
+                stack.append("bool")
             elif node[1] in [BinaryKind.AND, BinaryKind.OR]:
-                stack = check_binary_op(node, stack, {"bool"}, "bool")
+                stack, operands = check_binary_op(node, stack, {"bool"})
+                stack.append("bool")
             elif node[1] in [BinaryKind.EQ, BinaryKind.NOTEQ]:
-                stack = check_binary_op(node, stack, {"int", "bool"}, "bool")
+                stack, operands = check_binary_op(node, stack, {"int", "bool"})
+                stack.append("bool")
             else:
                 emit_error(f"Unexpected binary-op `{node[1]}`", node)
         elif node[0] == IRKind.Func:

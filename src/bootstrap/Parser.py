@@ -130,7 +130,7 @@ class Parser:
             elif self.curr_tok.typ in BinaryOps:
                 op = self.curr_tok.typ
                 self.advance()
-                yield [IRKind.Binary, BinaryOps[op], start_loc]
+                yield [IRKind.Binary, BinaryOps[op], None, start_loc]
             elif self.curr_tok.typ == TokenKind.INTRINSIC:
                 intrinsic = self.curr_tok.value
                 self.advance()

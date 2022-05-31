@@ -15,6 +15,12 @@ class LiteralKind(Enum):
     FLOAT = auto()
     BOOL = auto()
 
+class TypeKind(Enum):
+    STR = auto()
+    INT = auto()
+    FLOAT = auto()
+    BOOL = auto()
+
 class IntrinsicKind(Enum):
     DROP = auto()
     SWAP = auto()
