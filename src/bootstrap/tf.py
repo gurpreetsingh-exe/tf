@@ -236,7 +236,15 @@ def generate_intrinsic(ir):
             # for memory allocation
             return \
             "    push mem\n"
-        case IntrinsicKind.CAST_INT | IntrinsicKind.CAST_STR:
+        case IntrinsicKind.CAST_INT:
+            if ir[2] == TypeKind.FLOAT:
+                return \
+                "    pop rax\n" + \
+                "    movq xmm0, rax\n" + \
+                "    cvttsd2si rax, xmm0\n" + \
+                "    push rax\n"
+            return ""
+        case IntrinsicKind.CAST_STR:
             return ""
         case IntrinsicKind.READ8:
             return \
@@ -608,6 +616,8 @@ def type_chk(ir, data, new_scope=False):
                 stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.CAST_INT:
                 stack, typ = pop_without_underflow(stack, node)
+                if typ == TypeKind.FLOAT:
+                    ir[id] = ir[id][:2] + [typ] + ir[id][-1:]
                 stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.CAST_STR:
                 stack, typ = pop_without_underflow(stack, node)
