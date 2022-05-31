@@ -118,7 +118,8 @@ class Parser:
                 if lit.typ == LiteralKind.INT:
                     ir = [IRKind.PushInt, lit.value]
                 elif lit.typ == LiteralKind.FLOAT:
-                    ir = [IRKind.PushFloat, lit.value]
+                    flt_addr = self.inc_addr_get()
+                    ir = [IRKind.PushFloat, lit.value, flt_addr]
                 elif lit.typ == LiteralKind.STR:
                     str_addr = self.inc_addr_get()
                     ir = [IRKind.PushStr, lit.value, str_addr]

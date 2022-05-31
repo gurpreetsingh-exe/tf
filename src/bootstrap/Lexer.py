@@ -53,7 +53,14 @@ class Lexer:
 
             elif self.curr_char.isdigit():
                 word = self.lex_word(lambda self: self.curr_char.isdigit() or self.curr_char == ".")
-                lit = Literal_(LiteralKind.INT if float(word).is_integer() else LiteralKind.FLOAT, str(word))
+                try:
+                    int(word)
+                    typ = LiteralKind.INT
+                except ValueError:
+                    float(word)
+                    typ = LiteralKind.FLOAT
+
+                lit = Literal_(typ, str(word))
                 yield Token(TokenKind.LITERAL, lit, loc)
 
             elif self.curr_char.isalpha() or self.curr_char == "_":

@@ -219,7 +219,10 @@ def generate_body(ir, data):
         if op[0] == IRKind.PushInt:
             buffer += f"    push {op[1]}\n"
         elif op[0] == IRKind.PushFloat:
-            assert False, "not implemented yet"
+            buffer += f"    movsd xmm0, [flt{op[2]}]\n" + \
+                "    movq rax, xmm0\n" + \
+                "    push rax\n"
+            data['floats'].append(op[1:-1])
         elif op[0] == IRKind.PushStr:
             buffer += f"    push S{op[2]}\n"
             data['strings'].append(op[1:-1])
@@ -246,6 +249,7 @@ def generate_body(ir, data):
             buf, data = generate_body(op[3], data)
             buffer += buf
             data['funcs'][op[1]] = op[2]
+            # TODO: use `leave` here and in Return
             if not op[2][2]:
                 buffer += \
                 "    add rsp, {}\n".format(local_var_count * 8) + \
@@ -298,6 +302,7 @@ def generate_body(ir, data):
                 data['scopes'][-1].append({'sym': v, 'offset': offset})
                 buffer += f"    pop {reg[x]}\n    mov [rbp - {offset}], {reg[x]}\n"
         elif op[0] == IRKind.Return:
+            # TODO: use `leave` if it's possible
             buffer += \
             "    pop rax\n" + \
             "    add rsp, {}\n".format(op[1] * 8) + \
@@ -347,6 +352,7 @@ def generate_x86_64_nasm_linux(ir):
 
     data = {
         'strings': [],
+        'floats': [],
         'funcs': {},
         'scopes': [],
     }
@@ -365,7 +371,9 @@ def generate_x86_64_nasm_linux(ir):
     for string, i in data['strings']:
         if isinstance(string, bytes):
             raw_byte: str = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
-            buffer += f"S{i}:\n   db {raw_byte}\n"
+            buffer += f"S{i}:\n    db {raw_byte}\n"
+    for flt, i in data['floats']:
+        buffer += f"flt{i}:\n    dq {flt}\n"
 
     return buffer
 
@@ -483,8 +491,8 @@ def type_chk(ir, data, new_scope=False):
         elif node[0] == IRKind.Intrinsic:
             if node[1] == IntrinsicKind.PRINT:
                 stack, typ = pop_without_underflow(stack, node)
-                if typ not in {"int", "bool"}:
-                    emit_error(f"`{node[1]}` expects an `int` or `bool` but `{typ}` was given", node)
+                if typ not in {"int", "bool", "float", "str"}:
+                    emit_error(f"`{node[1]}` expects an `int`, `bool`, `float`, `str` but `{typ}` was given", node)
             elif node[1] == IntrinsicKind.SYSCALL:
                 stack, typ = pop_without_underflow(stack, node)
                 if typ not in {"int"}:
