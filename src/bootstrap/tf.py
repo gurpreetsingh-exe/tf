@@ -27,45 +27,113 @@ def generate_binary_op(op):
                 "    push rax\n"
             elif op[2] == TypeKind.FLOAT:
                 return \
-                "    ;; not implemented\n"
+                "    pop rax\n" + \
+                "    pop rbx\n" + \
+                "    movq xmm0, rax\n" + \
+                "    movq xmm1, rbx\n" + \
+                "    addsd xmm0, xmm1\n" + \
+                "    movq rax, xmm0\n" + \
+                "    push rax\n"
             else:
                 print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.SUB:
-            return \
-            "    pop rbx\n" + \
-            "    pop rax\n" + \
-            "    sub rax, rbx\n" + \
-            "    push rax\n"
+            if op[2] == TypeKind.INT:
+                return \
+                "    pop rbx\n" + \
+                "    pop rax\n" + \
+                "    sub rax, rbx\n" + \
+                "    push rax\n"
+            elif op[2] == TypeKind.FLOAT:
+                return \
+                "    pop rbx\n" + \
+                "    pop rax\n" + \
+                "    movq xmm0, rax\n" + \
+                "    movq xmm1, rbx\n" + \
+                "    subsd xmm0, xmm1\n" + \
+                "    movq rax, xmm0\n" + \
+                "    push rax\n"
+            else:
+                print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.MUL:
-            return \
-            "    pop rax\n" + \
-            "    pop rbx\n" + \
-            "    imul rax, rbx\n" + \
-            "    push rax\n"
+            if op[2] == TypeKind.INT:
+                return \
+                "    pop rax\n" + \
+                "    pop rbx\n" + \
+                "    imul rax, rbx\n" + \
+                "    push rax\n"
+            elif op[2] == TypeKind.FLOAT:
+                return \
+                "    pop rax\n" + \
+                "    pop rbx\n" + \
+                "    movq xmm0, rax\n" + \
+                "    movq xmm1, rbx\n" + \
+                "    mulsd xmm0, xmm1\n" + \
+                "    movq rax, xmm0\n" + \
+                "    push rax\n"
+            else:
+                print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.DIV:
-            return \
-            "    pop rbx\n" + \
-            "    pop rax\n" + \
-            "    cqo\n" + \
-            "    idiv rbx\n" + \
-            "    push rax\n"
+            if op[2] == TypeKind.INT:
+                return \
+                "    pop rbx\n" + \
+                "    pop rax\n" + \
+                "    cqo\n" + \
+                "    idiv rbx\n" + \
+                "    push rax\n"
+            elif op[2] == TypeKind.FLOAT:
+                return \
+                "    pop rbx\n" + \
+                "    pop rax\n" + \
+                "    movq xmm0, rax\n" + \
+                "    movq xmm1, rbx\n" + \
+                "    divsd xmm0, xmm1\n" + \
+                "    movq rax, xmm0\n" + \
+                "    push rax\n"
+            else:
+                print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.LT:
-            return \
-            "    pop rbx\n" + \
-            "    pop rax\n" + \
-            "    sub rbx, 1\n" + \
-            "    cmp rax, rbx\n" + \
-            "    mov rax, 0\n" + \
-            "    setle al\n" + \
-            "    push rax\n"
+            if op[2] == TypeKind.INT:
+                return \
+                "    pop rbx\n" + \
+                "    pop rax\n" + \
+                "    sub rbx, 1\n" + \
+                "    cmp rax, rbx\n" + \
+                "    mov rax, 0\n" + \
+                "    setle al\n" + \
+                "    push rax\n"
+            elif op[2] == TypeKind.FLOAT:
+                return \
+                "    pop rax\n" + \
+                "    pop rbx\n" + \
+                "    movq xmm0, rax\n" + \
+                "    movq xmm1, rbx\n" + \
+                "    comisd xmm0, xmm1\n" + \
+                "    mov rax, 0\n" + \
+                "    seta al\n" + \
+                "    push rax\n"
+            else:
+                print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.GT:
-            return \
-            "    pop rbx\n" + \
-            "    pop rax\n" + \
-            "    cmp rax, rbx\n" + \
-            "    mov rax, 0\n" + \
-            "    setg al\n" + \
-            "    push rax\n"
+            if op[2] == TypeKind.INT:
+                return \
+                "    pop rbx\n" + \
+                "    pop rax\n" + \
+                "    cmp rax, rbx\n" + \
+                "    mov rax, 0\n" + \
+                "    setg al\n" + \
+                "    push rax\n"
+            elif op[2] == TypeKind.FLOAT:
+                return \
+                "    pop rbx\n" + \
+                "    pop rax\n" + \
+                "    movq xmm0, rax\n" + \
+                "    movq xmm1, rbx\n" + \
+                "    comisd xmm0, xmm1\n" + \
+                "    mov rax, 0\n" + \
+                "    seta al\n" + \
+                "    push rax\n"
+            else:
+                print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.SHL:
             return \
             "    pop rcx\n" + \
@@ -437,6 +505,8 @@ def find_func(node, data):
 def check_binary_op(node, stack, expected):
     stack, rhs = pop_without_underflow(stack, node)
     stack, lhs = pop_without_underflow(stack, node)
+    if "float" in [lhs, rhs] and node[1] in [BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
+        emit_error(f"expected `int` but got `float`", node)
     if lhs not in expected or rhs not in expected:
         emit_error(f"expected {expected} for {node[1]} but got `{lhs}` and `{rhs}`", node)
     return stack, [lhs, rhs]
@@ -477,7 +547,11 @@ def type_chk(ir, data, new_scope=False):
                     ir[id][2] = TypeKind.INT
                     stack.append("int")
             elif node[1] in [BinaryKind.LT, BinaryKind.GT]:
-                stack, operands = check_binary_op(node, stack, {"int"})
+                stack, operands = check_binary_op(node, stack, {"int", "float"})
+                if "float" in operands:
+                    ir[id][2] = TypeKind.FLOAT
+                else:
+                    ir[id][2] = TypeKind.INT
                 stack.append("bool")
             elif node[1] in [BinaryKind.AND, BinaryKind.OR]:
                 stack, operands = check_binary_op(node, stack, {"bool"})
