@@ -97,7 +97,7 @@ class Parser:
         self.expect(TokenKind.LPAREN)
         while self.curr_tok.typ != TokenKind.RPAREN:
             typ = self.expect(TokenKind.IDENT).value
-            if typ not in {'int', 'str', 'bool'}:
+            if typ not in {'int', 'str', 'bool', 'float'}:
                 print(f"Unexpected type `{typ}`")
             args.append(type_dict[typ])
             if self.curr_tok.typ == TokenKind.RPAREN:
