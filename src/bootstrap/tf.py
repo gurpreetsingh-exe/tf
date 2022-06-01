@@ -246,6 +246,15 @@ def generate_intrinsic(ir):
             return ""
         case IntrinsicKind.CAST_STR:
             return ""
+        case IntrinsicKind.CAST_FLOAT:
+            if ir[2] == TypeKind.INT:
+                return \
+                "    pop rax\n" + \
+                "    pxor xmm0, xmm0\n" + \
+                "    cvtsi2sd xmm0, rax\n" + \
+                "    movq rax, xmm0\n" + \
+                "    push rax\n"
+            return ""
         case IntrinsicKind.READ8:
             return \
             "    pop rax\n" + \
@@ -622,6 +631,11 @@ def type_chk(ir, data, new_scope=False):
             elif node[1] == IntrinsicKind.CAST_STR:
                 stack, typ = pop_without_underflow(stack, node)
                 stack.append(TypeKind.STR)
+            elif node[1] == IntrinsicKind.CAST_FLOAT:
+                stack, typ = pop_without_underflow(stack, node)
+                if typ == TypeKind.INT:
+                    ir[id] = ir[id][:2] + [typ] + ir[id][-1:]
+                stack.append(TypeKind.FLOAT)
             elif node[1] == IntrinsicKind.READ8:
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {TypeKind.STR, TypeKind.INT}:

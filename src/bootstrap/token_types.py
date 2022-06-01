@@ -30,6 +30,7 @@ class IntrinsicKind(Enum):
     MEM = auto()
     CAST_INT = auto()
     CAST_STR = auto()
+    CAST_FLOAT = auto()
 
     READ8 = auto()
     WRITE8 = auto()
@@ -41,21 +42,22 @@ class IntrinsicKind(Enum):
     SYSCALL = auto()
 
 Intrinsics = {
-    "drop"    : IntrinsicKind.DROP,
-    "swap"    : IntrinsicKind.SWAP,
-    "dup"     : IntrinsicKind.DUP,
-    "over"    : IntrinsicKind.OVER,
-    "rot"     : IntrinsicKind.ROT,
-    "mem"     : IntrinsicKind.MEM,
-    "cast_int": IntrinsicKind.CAST_INT,
-    "cast_str": IntrinsicKind.CAST_STR,
-    "read8"   : IntrinsicKind.READ8,
-    "write8"  : IntrinsicKind.WRITE8,
-    "read64"  : IntrinsicKind.READ64,
-    "write64" : IntrinsicKind.WRITE64,
-    "divmod"  : IntrinsicKind.DIVMOD,
-    "print"   : IntrinsicKind.PRINT,
-    "syscall": IntrinsicKind.SYSCALL,
+    "drop"       : IntrinsicKind.DROP,
+    "swap"       : IntrinsicKind.SWAP,
+    "dup"        : IntrinsicKind.DUP,
+    "over"       : IntrinsicKind.OVER,
+    "rot"        : IntrinsicKind.ROT,
+    "mem"        : IntrinsicKind.MEM,
+    "cast_int"   : IntrinsicKind.CAST_INT,
+    "cast_str"   : IntrinsicKind.CAST_STR,
+    "cast_float" : IntrinsicKind.CAST_FLOAT,
+    "read8"      : IntrinsicKind.READ8,
+    "write8"     : IntrinsicKind.WRITE8,
+    "read64"     : IntrinsicKind.READ64,
+    "write64"    : IntrinsicKind.WRITE64,
+    "divmod"     : IntrinsicKind.DIVMOD,
+    "print"      : IntrinsicKind.PRINT,
+    "syscall"    : IntrinsicKind.SYSCALL,
 }
 
 class Intrinsic(Repr):
