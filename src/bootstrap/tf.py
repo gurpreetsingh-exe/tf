@@ -700,7 +700,7 @@ def type_chk(ir, data, new_scope=False):
                 stack, typ = pop_without_underflow(stack, node)
         elif node[0] == IRKind.Let:
             check_var_redefenitions(node, data)
-            for i, sym in enumerate(node[1]):
+            for sym in reversed(node[1]):
                 data['locals'] += 1
                 stack, typ = pop_without_underflow(stack, node)
                 data['scopes'][-1].append({'sym': sym, 'type': typ})
