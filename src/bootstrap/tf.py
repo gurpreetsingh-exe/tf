@@ -324,6 +324,10 @@ def generate_body(ir, data):
         elif op[0] == IRKind.PushVar:
             off = find_var(data['scopes'], op[1])
             buffer += f"    push QWORD [rbp - {off}]\n"
+        elif op[0] == IRKind.PushAddr:
+            off = find_var(data['scopes'], op[1])
+            buffer += f"    lea rax, [rbp - {off}]\n" + \
+                "    push rax\n"
         elif op[0] == IRKind.Binary:
             buffer += generate_binary_op(op)
         elif op[0] == IRKind.Func:
@@ -553,6 +557,9 @@ def type_chk(ir, data, new_scope=False):
                 stack.append(typ)
             else:
                 emit_error(f"`{node[1]}` is not defined", node)
+        elif node[0] == IRKind.PushAddr:
+            # TODO: man just introduce a usize or something
+            stack.append(TypeKind.INT)
         elif node[0] == IRKind.Binary:
             if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
                 stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.FLOAT})

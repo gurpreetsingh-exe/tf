@@ -9,6 +9,7 @@ class IRKind(Enum):
     PushStr = auto()
     PushBool = auto()
     PushVar = auto()
+    PushAddr = auto()
     Binary = auto()
     Intrinsic = auto()
     Call = auto()
@@ -171,6 +172,10 @@ class Parser:
                         self.expect(TokenKind.COMMA)
                 self.expect(TokenKind.SEMI)
                 yield [IRKind.Let, syms, start_loc]
+            elif self.curr_tok.typ == TokenKind.AMPERSAND:
+                self.advance()
+                symbol = self.expect(TokenKind.IDENT).value
+                yield [IRKind.PushAddr, symbol, start_loc]
             else:
                 return
 
