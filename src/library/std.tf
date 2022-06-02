@@ -44,8 +44,8 @@ func:int string_len(str) {
 }
 
 func println(str) {
-    dup string_len()
-    let string, length;
+    let string;
+    string string_len() let length;
     string cast_int length + 10 write8 // add newline
     SYS_WRITE STDOUT string length 1 + ~[3] syscall ~[1]
 }
