@@ -1,10 +1,11 @@
-from .token_types import *
+from token_types import *
 
 class IRKind(Enum):
     Func = auto()
     FuncSign = auto()
     Block = auto()
     PushInt = auto()
+    PushFloat = auto()
     PushStr = auto()
     PushBool = auto()
     PushVar = auto()
@@ -51,6 +52,13 @@ BinaryOps = {
     TokenKind.PERCENT    : BinaryKind.MOD,
 }
 
+type_dict = {
+    "int"   : TypeKind.INT,
+    "float" : TypeKind.FLOAT,
+    "str"   : TypeKind.STR,
+    "bool"  : TypeKind.BOOL,
+}
+
 expressions = [
     TokenKind.LITERAL,
     TokenKind.INTRINSIC,
@@ -89,9 +97,9 @@ class Parser:
         self.expect(TokenKind.LPAREN)
         while self.curr_tok.typ != TokenKind.RPAREN:
             typ = self.expect(TokenKind.IDENT).value
-            if typ not in {'int', 'str', 'bool'}:
+            if typ not in {'int', 'str', 'bool', 'float'}:
                 print(f"Unexpected type `{typ}`")
-            args.append(typ)
+            args.append(type_dict[typ])
             if self.curr_tok.typ == TokenKind.RPAREN:
                 break
             else:
@@ -116,6 +124,9 @@ class Parser:
                 lit = self.curr_tok.value
                 if lit.typ == LiteralKind.INT:
                     ir = [IRKind.PushInt, lit.value]
+                elif lit.typ == LiteralKind.FLOAT:
+                    flt_addr = self.inc_addr_get()
+                    ir = [IRKind.PushFloat, lit.value, flt_addr]
                 elif lit.typ == LiteralKind.STR:
                     str_addr = self.inc_addr_get()
                     ir = [IRKind.PushStr, lit.value, str_addr]
@@ -126,7 +137,7 @@ class Parser:
             elif self.curr_tok.typ in BinaryOps:
                 op = self.curr_tok.typ
                 self.advance()
-                yield [IRKind.Binary, BinaryOps[op], start_loc]
+                yield [IRKind.Binary, BinaryOps[op], None, start_loc]
             elif self.curr_tok.typ == TokenKind.INTRINSIC:
                 intrinsic = self.curr_tok.value
                 self.advance()
@@ -208,7 +219,7 @@ class Parser:
                 ret_type = None
                 if self.curr_tok.typ == TokenKind.COLON:
                     self.expect(TokenKind.COLON)
-                    ret_type = self.expect(TokenKind.IDENT).value
+                    ret_type = type_dict[self.expect(TokenKind.IDENT).value]
                 symbol = self.expect(TokenKind.IDENT).value
                 sign = self.func_sign()
                 body = self.block()
