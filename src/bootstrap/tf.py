@@ -686,10 +686,11 @@ def type_chk(ir, data, new_scope=False):
                 emit_error(f"`if` expects a `bool` but found `{cond}`", node)
             stack_snap = stack[:]
             data = type_chk(node[1], data, new_scope=True)
-            data['stack'] = stack_snap
             if not node[3]:
-                unhandled_stack_error(stack, node, f"`if` block modifies the stack, consider dropping {len(stack)} {value_or_values(stack)} or adding an `else` block with same stack order")
+                if data['stack'] != stack_snap:
+                    unhandled_stack_error(stack, node, f"`if` block modifies the stack, consider dropping {len(stack)} {value_or_values(stack)} or adding an `else` block with same stack order")
             else:
+                data['stack'] = stack_snap
                 stack_snap2 = stack[:]
                 data = type_chk(node[3], data)
                 if stack_snap2 != stack_snap:
