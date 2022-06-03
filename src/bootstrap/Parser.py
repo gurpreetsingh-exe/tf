@@ -66,6 +66,7 @@ expressions = [
     TokenKind.IDENT,
     TokenKind.TILDE,
     TokenKind.LET,
+    TokenKind.AMPERSAND,
 ] + list(BinaryOps.keys())
 
 class Parser:
