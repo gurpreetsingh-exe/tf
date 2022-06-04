@@ -1,6 +1,10 @@
 import std
 
 
+// token types supported by tf-lang
+const TOKEN_NUMBER 1
+
+
 // memory allocation using mmap :kekw:
 // # Arguments
 //
@@ -24,6 +28,62 @@ func:int __tf_alloc(int) {
 func __tf_dealloc(int, int) {
     let addr, len;
     addr len ~[2] SYS_MUNMAP syscall drop
+}
+
+
+// check if the given character is a digit (0-9)
+//
+// # Arguments
+//
+// * `int` - character (a u8 but that type doesn't exist so...)
+//
+// # Return value
+//
+// * `bool` - `true` if the character was a digit and `false` otherwise
+func:bool is_num(int) {
+    let num;
+    num 47 > num 58 < && if {
+        true return
+    }
+    false return
+}
+
+
+// parses string buffer into list of tokens
+//
+// # Arguments
+//
+// * `int` - pointer to the string buffer
+// * `int` - length of the string buffer
+func parse_tokens(int, int) {
+    let buf, length;
+
+    // buffer to collect all the words in
+    128 __tf_alloc() let token_buf;
+
+    0 let id;
+    0 let word_len;
+    id while id length < do {
+        id buf + read8 let curr_char;
+        &word_len 0 write64
+        curr_char 47 > curr_char 58 < && if {
+            while curr_char 47 > curr_char 58 < && do {
+                token_buf word_len + curr_char write8
+                &word_len word_len 1 + write64
+                &id id 1 + write64
+                &curr_char id buf + read8 write8
+            }
+            // word_len 1 + __tf_alloc() let token;
+            // token word_len + word_len write8
+        }
+        curr_char 32 == curr_char 10 == || if {
+            &id id 1 + write64
+        } else {
+            &id id 1 + write64
+        }
+    } drop
+
+    token_buf 128 __tf_dealloc()
 }
 
 
@@ -54,6 +114,7 @@ func read_file(str) {
     fd close()
 
     buf cast_str println()
+    buf filesize parse_tokens()
     buf filesize __tf_dealloc()
 }
 
