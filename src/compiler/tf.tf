@@ -6,6 +6,7 @@ const TOKEN_NUMBER 1
 
 
 // memory allocation using mmap :kekw:
+//
 // # Arguments
 //
 // * `int` - size of the chunk
@@ -20,7 +21,26 @@ func:int __tf_alloc(int) {
 }
 
 
+// re-allocating a pre-allocated chunk
+//
+// # Arguments
+//
+// * `int` - pointer to the chunk
+// * `int` - old size of the chunk
+// * `int` - new size of the chunk
+//
+// # Return value
+//
+// * `int` - pointer to the re-allocated chunk
+func:int __tf_realloc(int, int, int) {
+    let old_addr, old_size, new_size;
+    old_addr old_size new_size 0 ~[4] SYS_MREMAP syscall
+    return
+}
+
+
 // deallocation of memory allocated by using `__tf_alloc()`
+//
 // # Arguments
 //
 // * `int` - addr to the pointer
@@ -61,6 +81,15 @@ func parse_tokens(int, int) {
     // buffer to collect all the words in
     128 __tf_alloc() let token_buf;
 
+    // token list holds the list of pointers to the tokens
+    // this list is supposed to be dynamic and expandable
+    //
+    // # Fields
+    //
+    // * `size`   - offset(0)  - size of the list
+    // * `tokens` - offset(64) - beginning of the list of tokens
+    128 __tf_alloc() let token_list;
+
     0 let id;
     0 let word_len;
     id while id length < do {
@@ -73,8 +102,25 @@ func parse_tokens(int, int) {
                 &id id 1 + write64
                 &curr_char id buf + read8 write8
             }
-            // word_len 1 + __tf_alloc() let token;
-            // token word_len + word_len write8
+            // allocate 72 bytes for token, this might become 80 to store the type
+            //
+            // # Fields
+            //
+            // * `start`  - offset(0)  - index `id` where the word starts in the buffer
+            // * `length` - offset(64) - token len
+            16 __tf_alloc() let token;
+            token id write64
+            token 64 + word_len write8
+
+            // append the token into the `token_list` and update size
+            token_list 64 + token write64
+            token_list read64 let prev_len;
+            token_list prev_len 1 + write64
+
+            // allocate more space for the next token
+            prev_len 1 + 64 * 64 + let old_size;
+            token_list old_size old_size 64 + __tf_realloc()
+            &token_list swap write64
         }
         curr_char 32 == curr_char 10 == || if {
             &id id 1 + write64
