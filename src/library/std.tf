@@ -10,6 +10,7 @@ const SYS_STAT 4
 const SYS_FSTAT 5
 const SYS_MMAP 9
 const SYS_MUNMAP 11
+const SYS_MREMAP 25
 const SYS_EXIT 60
 
 
