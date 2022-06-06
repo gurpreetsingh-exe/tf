@@ -119,6 +119,10 @@ func parse_tokens(int, int) {
 
             // allocate more space for the next token
             prev_len 1 + 64 * 64 + let old_size;
+
+            // TODO: there is a bug in this or maybe in __tf_realloc()
+            // because the pointer is the same as before and the newly
+            // written data is showing as null
             token_list old_size old_size 64 + __tf_realloc()
             &token_list swap write64
         }
