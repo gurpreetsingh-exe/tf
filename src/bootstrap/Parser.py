@@ -21,6 +21,8 @@ class IRKind(Enum):
     Const = auto()
     Return = auto()
     Import = auto()
+    Macro = auto()
+    MacroCall = auto()
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -150,6 +152,9 @@ class Parser:
                     self.expect(TokenKind.LPAREN)
                     self.expect(TokenKind.RPAREN)
                     yield [IRKind.Call, symbol, start_loc]
+                elif self.curr_tok.typ == TokenKind.BANG:
+                    self.expect(TokenKind.BANG)
+                    yield [IRKind.MacroCall, symbol, start_loc]
                 else:
                     yield [IRKind.PushVar, symbol, start_loc]
             elif self.curr_tok.typ == TokenKind.TILDE:
@@ -233,6 +238,24 @@ class Parser:
                 sign.append(ret_type)
                 yield [IRKind.Func, symbol, sign, body, start_loc]
                 self.has_return = False
+            elif self.curr_tok.typ == TokenKind.MACRO:
+                self.expect(TokenKind.MACRO)
+                macro_name = self.expect(TokenKind.IDENT).value
+                self.expect(TokenKind.LCURLY)
+                tokens = []
+                while self.curr_tok.typ != TokenKind.RCURLY:
+                    if self.curr_tok.typ == TokenKind.FUNC:
+                        print("Cannot define function in a macro")
+                        exit(1)
+                    elif self.curr_tok.typ in [TokenKind.IF, TokenKind.ELSE, TokenKind.DO, TokenKind.WHILE]:
+                        print("Cannot use if-else, do-while in a macro")
+                        exit(1)
+                    elif self.curr_tok.typ == TokenKind.MACRO:
+                        print("Cannot define macro in a macro")
+                        exit(1)
+                    tokens += list(self.expr())
+                self.expect(TokenKind.RCURLY)
+                yield [IRKind.Macro, macro_name, tokens, start_loc]
             elif self.curr_tok.typ == TokenKind.IMPORT:
                 self.expect(TokenKind.IMPORT)
                 name = self.expect(TokenKind.IDENT).value
