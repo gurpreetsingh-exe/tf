@@ -748,11 +748,33 @@ def ir_passes(ir, addr):
     data['consts'] = {}
     ir = resolve_imports(ir, addr)
     ir, _ = expand_const(ir, data)
+    data['macros'] = {}
+    ir, _ = expand_macros(ir, data)
     data = { 'scopes': [], 'funcs': [], 'stack': [], 'func_scope': 'global', 'locals': 0 }
     data = type_chk(ir, data)
     if data['stack']:
         print("Unhandled data on the stack")
     return ir
+
+def expand_macros(ir, data):
+    for id, node in enumerate(ir):
+        if node[0] == IRKind.Macro:
+            data['macros'][node[1]] = node[2]
+        elif node[0] == IRKind.MacroCall:
+            if node[1] not in data['macros']:
+                print(f"macro `{node[1]}` is not defined")
+                exit(1)
+            ir.pop(id)
+            ir = ir[:id] + data['macros'][node[1]] + ir[id:]
+        elif node[0] == IRKind.Func:
+            node[3], data = expand_macros(node[3], data)
+        elif node[0] == IRKind.If:
+            node[1], data = expand_macros(node[1], data)
+            if node[3]:
+                node[3], data = expand_macros(node[3], data)
+        elif node[0] == IRKind.Do:
+            node[1], data = expand_macros(node[1], data)
+    return ir, data
 
 def expand_const(ir, data):
     for i, op in enumerate(ir):
