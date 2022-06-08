@@ -757,7 +757,8 @@ def ir_passes(ir, addr):
     return ir
 
 def expand_macros(ir, data):
-    for id, node in enumerate(ir):
+    id = 0
+    for node in ir[:]:
         if node[0] == IRKind.Macro:
             data['macros'][node[1]] = node[2]
         elif node[0] == IRKind.MacroCall:
@@ -766,6 +767,7 @@ def expand_macros(ir, data):
                 exit(1)
             ir.pop(id)
             ir = ir[:id] + data['macros'][node[1]] + ir[id:]
+            id += len(data['macros'][node[1]]) - 1
         elif node[0] == IRKind.Func:
             node[3], data = expand_macros(node[3], data)
         elif node[0] == IRKind.If:
@@ -774,6 +776,7 @@ def expand_macros(ir, data):
                 node[3], data = expand_macros(node[3], data)
         elif node[0] == IRKind.Do:
             node[1], data = expand_macros(node[1], data)
+        id += 1
     return ir, data
 
 def expand_const(ir, data):
@@ -803,13 +806,15 @@ def expand_const(ir, data):
                     dtype = IRKind.PushInt
                 elif lit['type'] == LiteralKind.STR:
                     dtype = IRKind.PushStr
-                ir[i] = (dtype, lit['value'])
+                ir[i] = [dtype, lit['value']]
         elif op[0] == IRKind.If:
             op[1], data = expand_const(op[1], data)
             if op[3]:
                 op[3], data = expand_const(op[3], data)
         elif op[0] == IRKind.Do:
             op[1], data = expand_const(op[1], data)
+        elif op[0] == IRKind.Macro:
+            op[2], data = expand_const(op[2], data)
 
     return ir, data
 
