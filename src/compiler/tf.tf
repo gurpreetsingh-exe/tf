@@ -144,24 +144,24 @@ func parse_tokens(int, int) {
 // * `str` - path of the file
 func read_file(str) {
     // get file descriptor to read the file
-    O_RDONLY 0 open() let fd;
+    O_RDONLY 0 open! let fd;
 
     // allocate statbuf to get size of file
     STATBUF_SIZE __tf_alloc() let statbuf;
-    fd statbuf fstat()
+    fd statbuf fstat!
 
     // 48 is the offset to st_size field
     statbuf 48 + read64 let filesize;
     statbuf STATBUF_SIZE __tf_dealloc()
 
     filesize __tf_alloc() let buf;
-    fd buf filesize read() filesize != if {
+    fd buf filesize read! filesize != if {
         "Error when reading file\n" println()
-        1 exit()
+        1 exit!
     }
 
     // close the file
-    fd close()
+    fd close!
 
     buf cast_str println()
     buf filesize parse_tokens()
@@ -178,10 +178,10 @@ func main(int) {
     let argv;
     argv read64 2 < if {
         "Usage: tf file...\n" println()
-        1 exit()
+        1 exit!
     }
 
     // read filepath from *argv
     argv 16 + read64 cast_str read_file()
-    0 exit()
+    0 exit!
 }
