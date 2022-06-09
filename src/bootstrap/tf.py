@@ -217,9 +217,7 @@ def generate_intrinsic(ir):
             "    push rbx\n"
         case IntrinsicKind.DUP:
             return \
-            "    pop rax\n" + \
-            "    push rax\n" + \
-            "    push rax\n"
+            "    push QWORD [rsp]\n"
         case IntrinsicKind.OVER:
             return \
             "    pop rax\n" + \
