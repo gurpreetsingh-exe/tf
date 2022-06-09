@@ -208,7 +208,7 @@ def generate_intrinsic(ir):
             "    push rax\n"
         case IntrinsicKind.DROP:
             return \
-            "    pop rax\n"
+            "    lea rsp, [rsp + 8]\n"
         case IntrinsicKind.SWAP:
             return \
             "    pop rax\n" + \
