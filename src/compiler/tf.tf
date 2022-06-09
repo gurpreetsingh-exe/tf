@@ -96,6 +96,7 @@ func parse_tokens(int, int) {
         id buf + read8 let curr_char;
         &word_len 0 write64
         curr_char 47 > curr_char 58 < && if {
+            id let token_start;
             while curr_char 47 > curr_char 58 < && do {
                 token_buf word_len + curr_char write8
                 &word_len word_len 1 + write64
@@ -109,20 +110,16 @@ func parse_tokens(int, int) {
             // * `start`  - offset(0)  - index `id` where the word starts in the buffer
             // * `length` - offset(64) - token len
             16 __tf_alloc() let token;
-            token id write64
+            token token_start write64
             token 64 + word_len write8
 
             // append the token into the `token_list` and update size
-            token_list 64 + token write64
             token_list read64 let prev_len;
+            token_list 64 + prev_len 64 * + token write64
             token_list prev_len 1 + write64
 
             // allocate more space for the next token
             prev_len 1 + 64 * 64 + let old_size;
-
-            // TODO: there is a bug in this or maybe in __tf_realloc()
-            // because the pointer is the same as before and the newly
-            // written data is showing as null
             token_list old_size old_size 64 + __tf_realloc()
             &token_list swap write64
         }
