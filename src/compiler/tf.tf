@@ -187,6 +187,34 @@ func:int read_file(str) {
 }
 
 
+// parse tokens into IR
+//
+// # Arguments
+//
+// * `int` - pointer to `token_list` struct
+// * `int` - pointer to `program` struct
+func gen_ir(int, int) {
+    let token_list, program;
+    token_list read64 let ntokens;
+    program read64 let buf;
+
+    0 let acc;
+    while acc ntokens < do {
+        token_list 64 + acc 64 * + read64 let token;
+        token 72 + read8 let tok_len;
+        0 let i;
+        i while i tok_len < do {
+            i token 8 + read64 + buf swap + read8
+            i mem + swap write8
+            &i i 1 + write64
+        } drop
+        mem tok_len + 10 write8
+        1 mem tok_len 1 + write!
+        &acc acc 1 + write64
+    }
+}
+
+
 // main function of the compiler
 //
 // # Arguments
@@ -204,9 +232,9 @@ func main(int) {
     program read64 let buf;
     program 64 + read64 let filesize;
 
-    buf cast_str println()
     buf filesize lex_tokens() let token_list;
 
+    token_list program gen_ir()
     token_list read64 let ntokens;
 
     token_list ntokens 64 * 64 + __tf_dealloc()
