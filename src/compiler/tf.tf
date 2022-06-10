@@ -75,7 +75,11 @@ func:bool is_num(int) {
 //
 // * `int` - pointer to the string buffer
 // * `int` - length of the string buffer
-func lex_tokens(int, int) {
+//
+// # Return
+//
+// * `int` - pointer to the `token_list` struct
+func:int lex_tokens(int, int) {
     let buf, length;
 
     // buffer to collect all the words in
@@ -133,6 +137,8 @@ func lex_tokens(int, int) {
     } drop
 
     token_buf 128 __tf_dealloc()
+    token_list
+    return
 }
 
 
@@ -141,7 +147,11 @@ func lex_tokens(int, int) {
 // # Arguments
 //
 // * `str` - path of the file
-func read_file(str) {
+//
+// # Return
+//
+// * `int` - pointer to the `program` struct
+func:int read_file(str) {
     // get file descriptor to read the file
     O_RDONLY 0 open! let fd;
 
@@ -162,9 +172,18 @@ func read_file(str) {
     // close the file
     fd close!
 
-    buf cast_str println()
-    buf filesize lex_tokens()
-    buf filesize __tf_dealloc()
+    // `program` holds the info about the source file and it's contents
+    //
+    // # Fields
+    //
+    // * (u64) `buf`  - offset(0)  - pointer to the char list
+    // * (u64) `size` - offset(64) - length of `buf`
+    128 __tf_alloc() let program;
+    program buf write64
+    program 64 + filesize write64
+
+    program
+    return
 }
 
 
@@ -180,7 +199,19 @@ func main(int) {
         1 exit!
     }
 
-    // read filepath from *argv
-    argv 16 + read64 cast_str read_file()
+    // read filepath from *argv and write contents of file into `program.buf`
+    argv 16 + read64 cast_str read_file() let program;
+    program read64 let buf;
+    program 64 + read64 let filesize;
+
+    buf cast_str println()
+    buf filesize lex_tokens() let token_list;
+
+    token_list read64 let ntokens;
+
+    token_list ntokens 64 * 64 + __tf_dealloc()
+    buf filesize __tf_dealloc()
+    program 128 __tf_dealloc()
+
     0 exit!
 }
