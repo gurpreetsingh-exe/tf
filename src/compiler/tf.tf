@@ -69,13 +69,13 @@ func:bool is_num(int) {
 }
 
 
-// parses string buffer into list of tokens
+// lex string buffer into list of tokens
 //
 // # Arguments
 //
 // * `int` - pointer to the string buffer
 // * `int` - length of the string buffer
-func parse_tokens(int, int) {
+func lex_tokens(int, int) {
     let buf, length;
 
     // buffer to collect all the words in
@@ -163,7 +163,7 @@ func read_file(str) {
     fd close!
 
     buf cast_str println()
-    buf filesize parse_tokens()
+    buf filesize lex_tokens()
     buf filesize __tf_dealloc()
 }
 
