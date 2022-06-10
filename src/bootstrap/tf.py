@@ -175,7 +175,7 @@ def generate_binary_op(op):
             "    pop rax\n" + \
             "    pop rbx\n" + \
             "    cmp rax, rbx\n" + \
-            "    xor rax, rax\n" + \
+            "    mov rax, 0\n" + \
             "    sete al\n" + \
             "    push rax\n"
         case BinaryKind.NOTEQ:
@@ -183,7 +183,7 @@ def generate_binary_op(op):
             "    pop rax\n" + \
             "    pop rbx\n" + \
             "    cmp rax, rbx\n" + \
-            "    xor rax, rax\n" + \
+            "    mov rax, 0\n" + \
             "    setne al\n" + \
             "    push rax\n"
         case BinaryKind.MOD:
