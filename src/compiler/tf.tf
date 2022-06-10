@@ -109,7 +109,7 @@ func parse_tokens(int, int) {
             //
             // * `start`  - offset(0)  - index `id` where the word starts in the buffer
             // * `length` - offset(64) - token len
-            16 __tf_alloc() let token;
+            72 __tf_alloc() let token;
             token token_start write64
             token 64 + word_len write8
 
