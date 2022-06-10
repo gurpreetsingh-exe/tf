@@ -51,24 +51,6 @@ func __tf_dealloc(int, int) {
 }
 
 
-// check if the given character is a digit (0-9)
-//
-// # Arguments
-//
-// * `int` - character (a u8 but that type doesn't exist so...)
-//
-// # Return value
-//
-// * `bool` - `true` if the character was a digit and `false` otherwise
-func:bool is_num(int) {
-    let num;
-    num 47 > num 58 < && if {
-        true return
-    }
-    false return
-}
-
-
 // lex string buffer into list of tokens
 //
 // # Arguments
