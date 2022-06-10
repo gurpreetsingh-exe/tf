@@ -86,8 +86,8 @@ func parse_tokens(int, int) {
     //
     // # Fields
     //
-    // * `size`   - offset(0)  - size of the list
-    // * `tokens` - offset(64) - beginning of the list of tokens
+    // * (u64) `size`   - offset(0)  - size of the list
+    // * (u64) `tokens` - offset(64) - beginning of the list of tokens
     128 __tf_alloc() let token_list;
 
     0 let id;
@@ -103,15 +103,17 @@ func parse_tokens(int, int) {
                 &id id 1 + write64
                 &curr_char id buf + read8 write8
             }
-            // allocate 72 bytes for token, this might become 80 to store the type
+            // allocate 80 bytes for token, this might become 80 to store the type
             //
             // # Fields
             //
-            // * `start`  - offset(0)  - index `id` where the word starts in the buffer
-            // * `length` - offset(64) - token len
-            72 __tf_alloc() let token;
-            token token_start write64
-            token 64 + word_len write8
+            // * (u8)  `type`   - offset(0)  - type of the token
+            // * (u64) `start`  - offset(8)  - index `id` where the word starts in the buffer
+            // * (u8)  `length` - offset(72) - token len
+            80 __tf_alloc() let token;
+            token TOKEN_NUMBER write8
+            token 8 + token_start write64
+            token 72 + word_len write8
 
             // append the token into the `token_list` and update size
             token_list read64 let prev_len;
