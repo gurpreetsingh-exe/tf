@@ -194,6 +194,34 @@ func:int read_file(str) {
 }
 
 
+// allocate 72 bytes for IR node
+//
+// # Fields
+//
+// * (u8)  `type`   - offset(0)  - type of the node
+// * (u64) `value`  - offset(8)  - pointer to the node
+macro new_ir_node {
+    let value, typ;
+    72 __tf_alloc() let node;
+
+    node typ write8
+    node 8 + value write64
+}
+
+
+// append node into the ir_list
+macro append_ir {
+    ir_list read64 let prev_len;
+    ir_list 64 + prev_len 64 * + node write64
+    ir_list prev_len 1 + write64
+
+    // allocate more space for the next node
+    prev_len 1 + 64 * 64 + let old_size;
+    ir_list old_size old_size 64 + __tf_realloc()
+    &ir_list swap write64
+}
+
+
 // parse tokens into IR
 //
 // # Arguments
