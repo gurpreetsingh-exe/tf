@@ -238,7 +238,14 @@ func gen_ir(int, int, int) {
     while acc ntokens < do {
         token_list 64 + acc 64 * + read64 let token;
         token read8 let token_kind;
-        token_kind print
+        token_kind TOKEN_NUMBER == if {
+            PUSH_INT 0 new_ir_node!
+            append_ir!
+        }
+        token_kind TOKEN_PLUS == if {
+            BINARY_ADD 0 new_ir_node!
+            append_ir!
+        }
         &acc acc 1 + write64
     }
 }
