@@ -226,10 +226,11 @@ macro append_ir {
 //
 // # Arguments
 //
-// * `int` - pointer to `token_list` struct
+// * `int` - pointer to `token_list` array
 // * `int` - pointer to `program` struct
-func gen_ir(int, int) {
-    let token_list, program;
+// * `int` - pointer to `ir_list` array
+func gen_ir(int, int, int) {
+    let token_list, program, ir_list;
     token_list read64 let ntokens;
     program read64 let buf;
 
@@ -262,10 +263,20 @@ func main(int) {
 
     buf filesize lex_tokens() let token_list;
 
-    token_list program gen_ir()
+    // ir_list holds the list of pointers to the ir node types
+    // this list is supposed to be dynamic and expandable
+    //
+    // # Fields
+    //
+    // * (u64) `size`  - offset(0)  - size of the list
+    // * (u64) `nodes` - offset(64) - beginning of the list of nodes
+    128 __tf_alloc() let ir_list;
+
+    token_list program ir_list gen_ir()
     token_list read64 let ntokens;
 
     token_list ntokens 64 * 64 + __tf_dealloc()
+    ir_list dup read64 64 * 64 + __tf_dealloc()
     buf filesize __tf_dealloc()
     program 128 __tf_dealloc()
 
