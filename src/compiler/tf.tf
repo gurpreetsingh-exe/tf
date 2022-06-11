@@ -2,7 +2,11 @@ import std
 
 
 // token types supported by tf-lang
+// literals
 const TOKEN_NUMBER 1
+
+// `+`
+const TOKEN_PLUS 2
 
 
 // memory allocation using mmap :kekw:
@@ -51,6 +55,36 @@ func __tf_dealloc(int, int) {
 }
 
 
+// allocate 80 bytes for token, this might become 80 to store the type
+//
+// # Fields
+//
+// * (u8)  `type`   - offset(0)  - type of the token
+// * (u64) `start`  - offset(8)  - index `id` where the word starts in the buffer
+// * (u8)  `length` - offset(72) - token len
+macro new_token {
+    let len, start, typ;
+    80 __tf_alloc() let token;
+
+    token typ write8
+    token 8 + start write64
+    token 72 + len write8
+}
+
+
+// append the token into the `token_list` and update size
+macro append_token {
+    token_list read64 let prev_len;
+    token_list 64 + prev_len 64 * + token write64
+    token_list prev_len 1 + write64
+
+    // allocate more space for the next token
+    prev_len 1 + 64 * 64 + let old_size;
+    token_list old_size old_size 64 + __tf_realloc()
+    &token_list swap write64
+}
+
+
 // lex string buffer into list of tokens
 //
 // # Arguments
@@ -89,31 +123,17 @@ func:int lex_tokens(int, int) {
                 &id id 1 + write64
                 &curr_char id buf + read8 write8
             }
-            // allocate 80 bytes for token, this might become 80 to store the type
-            //
-            // # Fields
-            //
-            // * (u8)  `type`   - offset(0)  - type of the token
-            // * (u64) `start`  - offset(8)  - index `id` where the word starts in the buffer
-            // * (u8)  `length` - offset(72) - token len
-            80 __tf_alloc() let token;
-            token TOKEN_NUMBER write8
-            token 8 + token_start write64
-            token 72 + word_len write8
 
-            // append the token into the `token_list` and update size
-            token_list read64 let prev_len;
-            token_list 64 + prev_len 64 * + token write64
-            token_list prev_len 1 + write64
+            TOKEN_NUMBER token_start word_len new_token!
+            append_token!
+        }
+        curr_char 43 == if {
+            TOKEN_PLUS id 1 new_token!
+            append_token!
 
-            // allocate more space for the next token
-            prev_len 1 + 64 * 64 + let old_size;
-            token_list old_size old_size 64 + __tf_realloc()
-            &token_list swap write64
+            &id id 1 + write64
         }
         curr_char 32 == curr_char 10 == || if {
-            &id id 1 + write64
-        } else {
             &id id 1 + write64
         }
     } drop
@@ -183,15 +203,8 @@ func gen_ir(int, int) {
     0 let acc;
     while acc ntokens < do {
         token_list 64 + acc 64 * + read64 let token;
-        token 72 + read8 let tok_len;
-        0 let i;
-        i while i tok_len < do {
-            i token 8 + read64 + buf swap + read8
-            i mem + swap write8
-            &i i 1 + write64
-        } drop
-        mem tok_len + 10 write8
-        1 mem tok_len 1 + write!
+        token read8 let token_kind;
+        token_kind print
         &acc acc 1 + write64
     }
 }
