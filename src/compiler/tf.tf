@@ -9,6 +9,11 @@ const TOKEN_NUMBER 1
 const TOKEN_PLUS 2
 
 
+// IR node types
+const PUSH_INT 1
+const BINARY_ADD 2
+
+
 // memory allocation using mmap :kekw:
 //
 // # Arguments
