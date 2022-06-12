@@ -289,6 +289,8 @@ def generate_intrinsic(ir):
             "    div rbx\n" + \
             "    push rax\n" + \
             "    push rdx\n"
+        case IntrinsicKind.HERE:
+            assert False, "this should be unreachable"
         case _:
             print("Undefined intrinsic")
             exit(1)
@@ -355,7 +357,12 @@ def generate_body(ir, data):
                 "    pop rbp\n" + \
                 "    ret\n"
         elif op[0] == IRKind.Intrinsic:
-            buffer += generate_intrinsic(op)
+            if op[1] == IntrinsicKind.HERE:
+                buffer += \
+                f"    push __here{len(data['locs'])}\n"
+                data['locs'].append(op[-1])
+            else:
+                buffer += generate_intrinsic(op)
         elif op[0] == IRKind.Call:
             assert data['funcs'][op[1]][0] == IRKind.FuncSign
             signature = data['funcs'][op[1]][1]
@@ -454,6 +461,7 @@ def generate_x86_64_nasm_linux(ir):
         'floats': [],
         'funcs': {},
         'scopes': [],
+        'locs': [],
     }
     buf, data = generate_body(ir, data)
     buffer += buf
@@ -473,6 +481,8 @@ def generate_x86_64_nasm_linux(ir):
             buffer += f"S{i}:\n    db {raw_byte},0x0\n"
     for flt, i in data['floats']:
         buffer += f"flt{i}:\n    dq {flt}\n"
+    for i, h in enumerate(data['locs']):
+        buffer += f"__here{i}:\n    dq {h[0] + 1}\n    dq {h[1] + 1}\n"
 
     return buffer
 
@@ -671,6 +681,8 @@ def type_chk(ir, data, new_scope=False):
                     emit_error(f"Expected `int` but got `{val}`", node)
             elif node[1] == IntrinsicKind.DIVMOD:
                 assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
+            elif node[1] == IntrinsicKind.HERE:
+                stack.append(TypeKind.INT)
             else:
                 assert False, f"Undefined intrinsic {node[1]}"
         elif node[0] == IRKind.Call:

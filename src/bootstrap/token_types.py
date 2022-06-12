@@ -37,6 +37,7 @@ class IntrinsicKind(Enum):
     READ64 = auto()
     WRITE64 = auto()
     DIVMOD = auto()
+    HERE = auto()
 
     PRINT = auto()
     SYSCALL = auto()
@@ -58,6 +59,7 @@ Intrinsics = {
     "divmod"     : IntrinsicKind.DIVMOD,
     "print"      : IntrinsicKind.PRINT,
     "syscall"    : IntrinsicKind.SYSCALL,
+    "here"       : IntrinsicKind.HERE,
 }
 
 class Intrinsic(Repr):
