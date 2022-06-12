@@ -832,7 +832,7 @@ def expand_const(ir, data):
                     dtype = IRKind.PushInt
                 elif lit['type'] == LiteralKind.STR:
                     dtype = IRKind.PushStr
-                ir[i] = [dtype, lit['value']]
+                ir[i] = [dtype, lit['value'], [0, 0]]
         elif op[0] == IRKind.If:
             op[1], data = expand_const(op[1], data)
             if op[3]:
