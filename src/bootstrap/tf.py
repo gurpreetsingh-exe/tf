@@ -307,6 +307,11 @@ def find_var(data, var):
     exit(1)
 
 def generate_body(ir, data):
+    def find_str(str_to_find):
+        for s, str_addr in data['strings']:
+            if str_to_find == s:
+                return str_addr
+
     global offset
     data['scopes'].append([])
     buffer = ""
@@ -321,8 +326,11 @@ def generate_body(ir, data):
                 "    push rax\n"
             data['floats'].append(op[1:-1])
         elif op[0] == IRKind.PushStr:
-            buffer += f"    push S{op[2]}\n"
-            data['strings'].append(op[1:-1])
+            if addr := find_str(op[1]):
+                buffer += f"    push S{addr}\n"
+            else:
+                buffer += f"    push S{op[2]}\n"
+                data['strings'].append(op[1:-1])
         elif op[0] == IRKind.PushBool:
             val = 1 if op[1] == 'true' else 0
             buffer += f"    mov BYTE al, {val}\n" + \
