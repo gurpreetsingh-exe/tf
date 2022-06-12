@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import copy
 from pathlib import Path
 import sys
 import subprocess
@@ -788,8 +789,11 @@ def expand_macros(ir, data):
                 print(f"macro `{node[1]}` is not defined")
                 exit(1)
             ir.pop(id)
-            ir = ir[:id] + data['macros'][node[1]] + ir[id:]
-            id += len(data['macros'][node[1]]) - 1
+            body = copy.deepcopy(data['macros'][node[1]])
+            for i in range(len(body)):
+                body[i][-1] = node[-1]
+            ir = ir[:id] + body + ir[id:]
+            id += len(body) - 1
         elif node[0] == IRKind.Func:
             node[3], data = expand_macros(node[3], data)
         elif node[0] == IRKind.If:
