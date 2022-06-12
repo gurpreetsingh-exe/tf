@@ -470,7 +470,7 @@ def generate_x86_64_nasm_linux(ir):
     for string, i in data['strings']:
         if isinstance(string, bytes):
             raw_byte: str = ','.join([hex(bytes(x, 'utf-8')[0]) for x in list(string.decode('unicode_escape'))])
-            buffer += f"S{i}:\n    db {raw_byte}\n"
+            buffer += f"S{i}:\n    db {raw_byte},0x0\n"
     for flt, i in data['floats']:
         buffer += f"flt{i}:\n    dq {flt}\n"
 
