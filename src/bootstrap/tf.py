@@ -215,9 +215,8 @@ def generate_intrinsic(ir):
         case IntrinsicKind.SWAP:
             return \
             "    pop rax\n" + \
-            "    pop rbx\n" + \
-            "    push rax\n" + \
-            "    push rbx\n"
+            "    push QWORD [rsp]\n" + \
+            "    mov [rsp + 8], rax\n"
         case IntrinsicKind.DUP:
             return \
             "    push QWORD [rsp]\n"
