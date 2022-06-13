@@ -1,4 +1,4 @@
-import std
+import panic
 
 
 // token types supported by tf-lang
