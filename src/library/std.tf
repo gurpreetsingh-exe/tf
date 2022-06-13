@@ -2,18 +2,6 @@ const STDIN 0
 const STDOUT 1
 const STDERR 2
 
-const SYS_READ 0
-const SYS_WRITE 1
-const SYS_OPEN 2
-const SYS_CLOSE 3
-const SYS_STAT 4
-const SYS_FSTAT 5
-const SYS_MMAP 9
-const SYS_MUNMAP 11
-const SYS_MREMAP 25
-const SYS_EXIT 60
-
-
 const PROT_NONE 0
 const PROT_READ 1
 const PROT_WRITE 2
@@ -57,14 +45,12 @@ func:int read(int, int, int) {
     return
 }
 
-macro read { ~[3] SYS_READ syscall }
 
 func write(int, str, int) {
     let fd, buf, size;
     fd buf size ~[3] SYS_WRITE syscall drop
 }
 
-macro write { ~[3] SYS_WRITE syscall drop }
 
 // TODO: there is a stack alignment bug which is why stack vars
 // are moved into locals
@@ -74,31 +60,26 @@ func:int open(str, int, int) {
     return
 }
 
-macro open { ~[3] SYS_OPEN syscall }
 
 func close(int) {
     let fd;
     fd ~[1] SYS_CLOSE syscall drop
 }
 
-macro close { ~[1] SYS_CLOSE syscall drop }
 
 func stat(str, int) {
     let filename, statbuf;
     filename cast_int statbuf ~[2] SYS_STAT syscall drop
 }
 
-macro stat { ~[2] SYS_STAT syscall drop }
 
 func fstat(int, int) {
     let fd, statbuf;
     fd statbuf ~[2] SYS_FSTAT syscall drop
 }
 
-macro fstat { ~[2] SYS_FSTAT syscall drop }
 
 func exit(int) {
     ~[1] SYS_EXIT syscall drop
 }
 
-macro exit { ~[1] SYS_EXIT syscall drop }
