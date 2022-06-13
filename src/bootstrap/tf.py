@@ -222,11 +222,7 @@ def generate_intrinsic(ir):
             "    push QWORD [rsp]\n"
         case IntrinsicKind.OVER:
             return \
-            "    pop rax\n" + \
-            "    pop rbx\n" + \
-            "    push rbx\n" + \
-            "    push rax\n" + \
-            "    push rbx\n"
+            "    push QWORD [rsp + 8]\n"
         case IntrinsicKind.ROT:
             return \
             "    pop rax\n" + \
