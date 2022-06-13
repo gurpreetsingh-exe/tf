@@ -131,18 +131,20 @@ func:int lex_tokens(int, int) {
 
             TOKEN_NUMBER token_start word_len new_token!
             append_token!
-        }
-        curr_char 43 == if {
-            TOKEN_PLUS id 1 new_token!
-            append_token!
-
-            &id id 1 + write64
-        }
-        curr_char 32 == curr_char 10 == || if {
-            &id id 1 + write64
         } else {
-            "ERROR: Unexpected character" println()
-            1 exit!
+            curr_char 43 == if {
+                TOKEN_PLUS id 1 new_token!
+                append_token!
+
+                &id id 1 + write64
+            } else {
+                curr_char 32 == curr_char 10 == || if {
+                    &id id 1 + write64
+                } else {
+                    "ERROR: Unexpected character" println()
+                    1 exit!
+                }
+            }
         }
     } drop
 
