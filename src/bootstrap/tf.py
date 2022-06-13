@@ -785,6 +785,7 @@ def expand_macros(ir, data):
                 exit(1)
             ir.pop(id)
             body = copy.deepcopy(data['macros'][node[1]])
+            body, data = expand_macros(body, data)
             for i in range(len(body)):
                 body[i][-1] = node[-1]
             ir = ir[:id] + body + ir[id:]
