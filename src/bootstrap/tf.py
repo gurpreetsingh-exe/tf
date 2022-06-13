@@ -491,7 +491,8 @@ def generate_x86_64_nasm_linux(ir):
     return buffer
 
 def resolve_imports(ir, addr):
-    for i, op in enumerate(ir):
+    i = 0
+    for op in ir[:]:
         if op[0] == IRKind.Import:
             module = op[1]
             path = Path(State.root).parent
@@ -510,6 +511,8 @@ def resolve_imports(ir, addr):
             mod_ir = resolve_imports(mod_ir, parser.addr)
             ir.pop(i)
             ir = ir[:i] + mod_ir + ir[i:]
+            i += len(mod_ir) - 1
+        i += 1
     return ir
 
 def emit_error(msg, node):
