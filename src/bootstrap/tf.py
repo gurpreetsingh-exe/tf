@@ -490,6 +490,8 @@ def generate_x86_64_nasm_linux(ir):
 
     return buffer
 
+# TODO: find a better solution for handling imports
+# maybe something like path segments eg.`linux::write` would be nice
 def resolve_imports(ir, addr):
     i = 0
     for op in ir[:]:
@@ -498,7 +500,7 @@ def resolve_imports(ir, addr):
             path = Path(State.root).parent
             mod_path = os.path.join(path, module) + ".tf"
             # if not found then look for the module in standard library
-            if not Path(mod_path).exists():
+            if Path(State.root).stem == module or not Path(mod_path).exists():
                 mod_path = os.path.join(State.libpath, module) + ".tf"
                 # if the file is still not found then it doesn't exist
                 if not Path(mod_path).exists():
@@ -508,7 +510,7 @@ def resolve_imports(ir, addr):
             parser = Parser(mod_path, tokens)
             parser.addr = addr
             mod_ir = list(parser.parse())
-            mod_ir = resolve_imports(mod_ir, parser.addr)
+            addr += parser.addr
             ir.pop(i)
             ir = ir[:i] + mod_ir + ir[i:]
             i += len(mod_ir) - 1
