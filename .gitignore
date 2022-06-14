@@ -1,8 +1,13 @@
+*
+!*.*
+!/*/
 __pycache__/
 .vscode/
 .vim/
-tests/
+tests_/
 make.sh
 main*
-test*
 Makefile
+profile.py
+*.txt
+*.log
