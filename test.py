@@ -30,7 +30,7 @@ for path in pathlib.Path(test_dir).iterdir():
 
     print(f"INFO: Compiling {file_path}")
     exec_name = file_name.split(".")[0]
-    proc = subprocess.Popen(["./src/bootstrap/tf.py", "-c", file_path], stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["./src/bootstrap/tf.py", "-c", file_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     lines = "".join([i.decode('utf-8') for i in proc.stdout.readlines()])
     proc.communicate()
     if proc.returncode != 0:
@@ -44,7 +44,7 @@ for path in pathlib.Path(test_dir).iterdir():
 
     target = os.path.join(test_dir, exec_name)
     print(f"INFO: Running {target}")
-    proc = subprocess.Popen([target], stdout=subprocess.PIPE)
+    proc = subprocess.Popen([target], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     lines = "".join([i.decode('utf-8') for i in proc.stdout.readlines()])
     proc.communicate()
     if proc.returncode == 101:
@@ -56,6 +56,10 @@ for path in pathlib.Path(test_dir).iterdir():
             fd.write(f"== INFO: Return code: {proc.returncode}\n\n")
     else:
         state.passed_tests += 1
+        with open(logs_file, "a") as fd:
+            fd.write(f"== INFO: Output for {target}\n== ")
+            fd.write(lines)
+            fd.write(f"== INFO: Return code: {proc.returncode}\n\n")
     subprocess.call(["rm", target, target + ".asm", target + ".o"])
 
 print(f"\n    passed tests:    {state.passed_tests}\t")
