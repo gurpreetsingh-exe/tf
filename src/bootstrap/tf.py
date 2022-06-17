@@ -766,6 +766,32 @@ def unhandled_stack_error(stack, node, msg):
     if stack:
         emit_error(msg, node)
 
+def dump_ir(ir, level):
+    for x in ir:
+        if x[0] == IRKind.Func:
+            sys.stdout.write("    "*level)
+            print(f"func {x[1]}")
+            dump_ir(x[3], level + 1)
+        elif x[0] == IRKind.Do:
+            sys.stdout.write("    "*level)
+            print("do:")
+            dump_ir(x[1], level + 1)
+        elif x[0] == IRKind.If:
+            sys.stdout.write("    "*level)
+            print("if:")
+            dump_ir(x[1], level + 1)
+            if x[3]:
+                sys.stdout.write("    "*level)
+                print("else:")
+                dump_ir(x[3], level + 1)
+        elif x[0] == IRKind.Macro:
+            sys.stdout.write("    "*level)
+            print(f"macro {x[1]}")
+            dump_ir(x[2], level + 1)
+        else:
+            sys.stdout.write("    "*level)
+            print(x)
+
 def ir_passes(ir, addr):
     data = {}
     data['consts'] = {}
