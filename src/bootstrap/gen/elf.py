@@ -15,7 +15,7 @@ class Elf64_Ehdr:
         self.e_shnum     = 0     # We don't know yet
         self.e_shstrndx  = 0     # ^^^^^^^^^^^^^^^^^
 
-    def emit_ehdr(self, gen):
+    def emit(self, gen):
         gen.write(self.e_ident)
         gen.write_u16(self.e_type)
         gen.write_u16(self.e_machine)
@@ -33,6 +33,12 @@ class Elf64_Ehdr:
 
     def set_entry(self, gen, addr):
         gen.write_u64_at(addr, 24)
+
+    def set_shnum(self, gen, num):
+        gen.write_u16_at(num, 60)
+
+    def set_shoff(self, gen, addr):
+        gen.write_u64_at(addr, 40)
 
 class Elf64_Phdr:
     def __init__(self):
@@ -58,6 +64,18 @@ class Elf64_Shdr:
         self.sh_info = 0
         self.sh_addralign = 0
         self.sh_entsize = 0
+
+    def emit(self, gen):
+        gen.write_u32(self.sh_name)
+        gen.write_u32(self.sh_type)
+        gen.write_u64(self.sh_flags)
+        gen.write_u64(self.sh_addr)
+        gen.write_u64(self.sh_offset)
+        gen.write_u64(self.sh_size)
+        gen.write_u32(self.sh_link)
+        gen.write_u32(self.sh_info)
+        gen.write_u64(self.sh_addralign)
+        gen.write_u64(self.sh_entsize)
 
 
 class Elf64_Sym:

@@ -7,9 +7,16 @@ class Gen:
         self.symbols = []
         self.strings = []
         self.labels = []
+        self.shdrs = []
 
     def gen_exec(self):
-        self.emit_header()
+        ehdr = Elf64_Ehdr()
+        ehdr.emit(self)
+        ehdr.set_entry(self, 0x401100)
+        ehdr.set_shoff(self, len(self.buf))
+        self.create_section(".text", 1)
+        ehdr.set_shnum(self, len(self.shdrs))
+
         try:
             with open(self.out_name, "wb") as f:
                 f.write(self.buf)
@@ -17,10 +24,12 @@ class Gen:
             with open(self.out_name, "xb") as f:
                 f.write(self.buf)
 
-    def emit_header(self):
-        ehdr = Elf64_Ehdr()
-        ehdr.emit_ehdr(self)
-        ehdr.set_entry(self, 0x401100)
+    def create_section(self, name, typ):
+        shdr = Elf64_Shdr()
+        shdr.sh_type = typ
+        shdr.sh_offset = len(self.buf)
+        self.shdrs.append(shdr)
+        shdr.emit(self)
 
     def write_u8(self, n: int) -> None:
         self.buf.append(n & 0xff)
@@ -56,14 +65,14 @@ class Gen:
 
     def write_u8_at(self, n: int, addr: int) -> None:
         if len(self.buf) < addr:
-            print(f"Write address exceeds the total buffer length write_u8_at, buf_size: {len(self.buf)}, addr: {addr}")
+            print(f"Cannot write to buf in write_u8_at, buf_size: {len(self.buf)}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
 
     def write_u16_at(self, n: int, addr: int) -> None:
         if len(self.buf) < addr:
-            print(f"Write address exceeds the total buffer length write_u16_at, buf_size: {len(self.buf)}, addr: {addr}")
+            print(f"Cannot write to buf in write_u16_at, buf_size: {len(self.buf)}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
@@ -71,7 +80,7 @@ class Gen:
 
     def write_u32_at(self, n: int, addr: int) -> None:
         if len(self.buf) < addr:
-            print(f"Write address exceeds the total buffer length write_u32_at, buf_size: {len(self.buf)}, addr: {addr}")
+            print(f"Cannot write to buf in write_u32_at, buf_size: {len(self.buf)}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
@@ -81,7 +90,7 @@ class Gen:
 
     def write_u64_at(self, n: int, addr: int) -> None:
         if len(self.buf) < addr:
-            print(f"Write address exceeds the total buffer length write_u64_at, buf_size: {len(self.buf)}, addr: {addr}")
+            print(f"Cannot write to buf in write_u64_at, buf_size: {len(self.buf)}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
