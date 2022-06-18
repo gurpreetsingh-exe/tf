@@ -8,11 +8,32 @@ class Gen:
         self.strings = []
         self.labels = []
         self.shdrs = []
+        self.phdrs = []
         self.ehdr = Elf64_Ehdr()
 
     def gen_exec(self):
         self.ehdr.emit(self)
         self.ehdr.set_entry(self, 0x401100)
+        self.gen_program_headers()
+
+        self.gen_section_headers()
+
+        try:
+            with open(self.out_name, "wb") as f:
+                f.write(self.buf)
+        except FileExistsError:
+            with open(self.out_name, "xb") as f:
+                f.write(self.buf)
+
+    def gen_program_headers(self):
+        self.ehdr.set_phoff(self, self.curr_addr)
+        self.create_phdr("", 1)
+        self.create_phdr(".text", 1)
+        self.create_phdr(".data", 1)
+
+        self.ehdr.set_phnum(self, len(self.phdrs))
+
+    def gen_section_headers(self):
         self.ehdr.set_shoff(self, self.curr_addr)
         self.create_shdr("", 0, 0)
         self.create_shdr(".text", 1, 0)
@@ -31,13 +52,6 @@ class Gen:
         self.emit_shstrtab(shstrtab)
         self.ehdr.set_shstrndx(self, len(self.shdrs) - 1)
 
-        try:
-            with open(self.out_name, "wb") as f:
-                f.write(self.buf)
-        except FileExistsError:
-            with open(self.out_name, "xb") as f:
-                f.write(self.buf)
-
     @property
     def curr_addr(self):
         return len(self.buf)
@@ -54,6 +68,16 @@ class Gen:
             buf += bytes(shdr.name, 'utf-8') + b'\x00'
         self.buf += buf
         shstrtab.shdr.set_size(self, len(buf), shstrtab.addr)
+
+    def create_phdr(self, name, typ):
+        phdr = Elf64_Phdr()
+        phdr.p_type = typ
+        __phdr = lambda x: None
+        __phdr.name = name
+        __phdr.phdr = phdr
+        __phdr.addr = self.curr_addr
+        self.phdrs.append(__phdr)
+        phdr.emit(self)
 
     def create_shdr(self, name, typ, entsz):
         shdr = Elf64_Shdr()

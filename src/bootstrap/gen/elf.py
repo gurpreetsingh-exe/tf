@@ -50,9 +50,17 @@ class Elf64_Ehdr:
         self.e_entry = addr
         gen.write_u64_at(addr, self.off_entry)
 
+    def set_phnum(self, gen, num):
+        self.e_phnum = num
+        gen.write_u16_at(num, self.off_phnum)
+
     def set_shnum(self, gen, num):
         self.e_shnum = num
         gen.write_u16_at(num, self.off_shnum)
+
+    def set_phoff(self, gen, addr):
+        self.e_phoff = addr
+        gen.write_u64_at(addr, self.off_phoff)
 
     def set_shoff(self, gen, addr):
         self.e_shoff = addr
@@ -72,6 +80,29 @@ class Elf64_Phdr:
         self.p_filesz = 0
         self.p_memsz = 0
         self.p_align = 0
+
+        self.off_type = 0
+        self.off_flags = 4
+        self.off_offset = 8
+        self.off_vaddr = 16
+        self.off_paddr = 24
+        self.off_filesz = 32
+        self.off_memsz = 40
+        self.off_align = 48
+
+    def emit(self, gen):
+        gen.write_u32(self.p_type)
+        gen.write_u32(self.p_flags)
+        gen.write_u64(self.p_offset)
+        gen.write_u64(self.p_vaddr)
+        gen.write_u64(self.p_paddr)
+        gen.write_u64(self.p_filesz)
+        gen.write_u64(self.p_memsz)
+        gen.write_u64(self.p_align)
+
+    def set_typ(self, gen, addr, typ):
+        self.sh_type = typ
+        gen.write_u32_at(typ, self.off_type + addr)
 
 
 class Elf64_Shdr:
