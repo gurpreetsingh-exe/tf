@@ -12,9 +12,6 @@ class Gen:
         self.phdrs = []
         self.ehdr = Elf64_Ehdr()
 
-        # temp
-        self.hello_world_addr = b"\x00\x00\x00\x00\x00\x00\x00\x00"
-
     def gen_exec(self):
         self.ehdr.emit(self)
         self.gen_program_headers()
@@ -48,7 +45,7 @@ class Gen:
         self.buf += b"\xbf\x01\x00\x00\x00"              #  mov edi, 1
         self.buf += b"\x48\xbe"
         self.symbols.append(["hw", self.curr_addr])
-        self.buf += self.hello_world_addr
+        self.buf += b"00000000"
         self.buf += b"\xba\x0c\x00\x00\x00"              #  mov edx, 12
         self.buf += b"\xb8\x01\x00\x00\x00"              #  mov eax, 1
         self.buf += b"\x0f\x05"                          #  syscall
