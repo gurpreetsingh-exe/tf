@@ -28,7 +28,7 @@ class Gen:
 
         shstrtab = self.find_shdr(".shstrtab")
         shstrtab.shdr.set_offset(self, self.curr_addr, shstrtab.addr)
-        self.emit_shstrtab()
+        self.emit_shstrtab(shstrtab)
         self.ehdr.set_shstrndx(self, len(self.shdrs) - 1)
 
         try:
@@ -47,10 +47,13 @@ class Gen:
             if shdr.name == name:
                 return shdr
 
-    def emit_shstrtab(self):
+    def emit_shstrtab(self, shstrtab):
+        buf = bytes()
         for shdr in self.shdrs:
-            shdr.shdr.set_name(self, len(shdr.name), shdr.addr)
-            self.buf += bytes(shdr.name, 'utf-8') + b'\x00'
+            shdr.shdr.set_name(self, len(buf), shdr.addr)
+            buf += bytes(shdr.name, 'utf-8') + b'\x00'
+        self.buf += buf
+        shstrtab.shdr.set_size(self, len(buf), shstrtab.addr)
 
     def create_shdr(self, name, typ, entsz):
         shdr = Elf64_Shdr()

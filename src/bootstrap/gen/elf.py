@@ -111,6 +111,7 @@ class Elf64_Shdr:
         gen.write_u64(self.sh_entsize)
 
     def set_name(self, gen, addr, at):
+        self.sh_name = addr
         gen.write_u32_at(addr, self.off_name + at)
 
     def set_typ(self, gen, addr, typ):
@@ -119,6 +120,9 @@ class Elf64_Shdr:
 
     def set_offset(self, gen, addr, at):
         gen.write_u64_at(addr, self.off_offset + at)
+
+    def set_size(self, gen, size, at):
+        gen.write_u64_at(size, self.off_size + at)
 
     def set_link(self, gen, addr, link):
         self.sh_link = link
