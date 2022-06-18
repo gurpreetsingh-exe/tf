@@ -8,14 +8,28 @@ class Gen:
         self.strings = []
         self.labels = []
         self.shdrs = []
+        self.ehdr = Elf64_Ehdr()
 
     def gen_exec(self):
-        ehdr = Elf64_Ehdr()
-        ehdr.emit(self)
-        ehdr.set_entry(self, 0x401100)
-        ehdr.set_shoff(self, len(self.buf))
-        self.create_section(".text", 1)
-        ehdr.set_shnum(self, len(self.shdrs))
+        self.ehdr.emit(self)
+        self.ehdr.set_entry(self, 0x401100)
+        self.ehdr.set_shoff(self, self.curr_addr)
+        self.create_shdr("", 0, 0)
+        self.create_shdr(".text", 1, 0)
+        self.create_shdr(".data", 1, 0)
+        self.create_shdr(".symtab", 2, 24)
+        self.create_shdr(".strtab", 3, 0)
+        self.create_shdr(".shstrtab", 3, 0)
+
+        symtab = self.find_shdr(".symtab")
+        symtab.shdr.set_link(self, symtab.addr, 4)
+
+        self.ehdr.set_shnum(self, len(self.shdrs))
+
+        shstrtab = self.find_shdr(".shstrtab")
+        shstrtab.shdr.set_offset(self, self.curr_addr, shstrtab.addr)
+        self.emit_shstrtab()
+        self.ehdr.set_shstrndx(self, len(self.shdrs) - 1)
 
         try:
             with open(self.out_name, "wb") as f:
@@ -24,11 +38,29 @@ class Gen:
             with open(self.out_name, "xb") as f:
                 f.write(self.buf)
 
-    def create_section(self, name, typ):
+    @property
+    def curr_addr(self):
+        return len(self.buf)
+
+    def find_shdr(self, name):
+        for shdr in self.shdrs:
+            if shdr.name == name:
+                return shdr
+
+    def emit_shstrtab(self):
+        for shdr in self.shdrs:
+            shdr.shdr.set_name(self, len(shdr.name), shdr.addr)
+            self.buf += bytes(shdr.name, 'utf-8') + b'\x00'
+
+    def create_shdr(self, name, typ, entsz):
         shdr = Elf64_Shdr()
         shdr.sh_type = typ
-        shdr.sh_offset = len(self.buf)
-        self.shdrs.append(shdr)
+        shdr.sh_entsize = entsz
+        __shdr = lambda x: None
+        __shdr.name = name
+        __shdr.shdr = shdr
+        __shdr.addr = self.curr_addr
+        self.shdrs.append(__shdr)
         shdr.emit(self)
 
     def write_u8(self, n: int) -> None:
@@ -64,23 +96,23 @@ class Gen:
         self.buf += buf
 
     def write_u8_at(self, n: int, addr: int) -> None:
-        if len(self.buf) < addr:
-            print(f"Cannot write to buf in write_u8_at, buf_size: {len(self.buf)}, addr: {addr}")
+        if self.curr_addr < addr:
+            print(f"Cannot write to buf in write_u8_at, buf_size: {self.curr_addr}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
 
     def write_u16_at(self, n: int, addr: int) -> None:
-        if len(self.buf) < addr:
-            print(f"Cannot write to buf in write_u16_at, buf_size: {len(self.buf)}, addr: {addr}")
+        if self.curr_addr < addr:
+            print(f"Cannot write to buf in write_u16_at, buf_size: {self.curr_addr}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
         self.buf[addr + 1] = (n >> 8) & 0xff
 
     def write_u32_at(self, n: int, addr: int) -> None:
-        if len(self.buf) < addr:
-            print(f"Cannot write to buf in write_u32_at, buf_size: {len(self.buf)}, addr: {addr}")
+        if self.curr_addr < addr:
+            print(f"Cannot write to buf in write_u32_at, buf_size: {self.curr_addr}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
@@ -89,8 +121,8 @@ class Gen:
         self.buf[addr + 3] = (n >> 24) & 0xff
 
     def write_u64_at(self, n: int, addr: int) -> None:
-        if len(self.buf) < addr:
-            print(f"Cannot write to buf in write_u64_at, buf_size: {len(self.buf)}, addr: {addr}")
+        if self.curr_addr < addr:
+            print(f"Cannot write to buf in write_u64_at, buf_size: {self.curr_addr}, addr: {addr}")
             exit(1)
 
         self.buf[addr] = n & 0xff
