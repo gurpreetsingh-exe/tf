@@ -100,6 +100,13 @@ class Elf64_Phdr:
         gen.write_u64(self.p_memsz)
         gen.write_u64(self.p_align)
 
+    def set_typ(self, gen, addr, typ):
+        self.sh_type = typ
+        gen.write_u32_at(typ, self.off_type + addr)
+
+    def set_flags(self, gen, flag, at):
+        gen.write_u32_at(flag, self.off_flags + at)
+
     def set_offset(self, gen, addr, at):
         gen.write_u64_at(addr, self.off_offset + at)
 
@@ -114,10 +121,6 @@ class Elf64_Phdr:
 
     def set_memsz(self, gen, addr, at):
         gen.write_u64_at(addr, self.off_memsz + at)
-
-    def set_typ(self, gen, addr, typ):
-        self.sh_type = typ
-        gen.write_u32_at(typ, self.off_type + addr)
 
 
 class Elf64_Shdr:
