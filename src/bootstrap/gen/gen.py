@@ -1,5 +1,18 @@
+from enum import Enum, auto
 import os
 from .elf import *
+
+
+class Reg(Enum):
+    rax = auto()
+    rbx = auto()
+    rcx = auto()
+    rdx = auto()
+    rsi = auto()
+    rdi = auto()
+    rbp = auto()
+    rsp = auto()
+
 
 class Gen:
     def __init__(self, out_name):
@@ -10,12 +23,15 @@ class Gen:
         self.labels = []
         self.shdrs = []
         self.phdrs = []
+        self.rela = []
         self.ehdr = Elf64_Ehdr()
+        self.main = 0
 
-    def gen_exec(self):
+    def gen_exec(self, ir):
         self.ehdr.emit(self)
         self.gen_program_headers()
-        self.gen_hello_world()
+        # self.gen_hello_world()
+        self.gen_text_from_ir(ir)
 
         __null = self.find_phdr("")
         __null.phdr.set_vaddr(self, 0, __null.addr)
@@ -32,6 +48,71 @@ class Gen:
             with open(self.out_name, "xb") as f:
                 f.write(self.buf)
         os.chmod(self.out_name, 0o755)
+
+    def gen_text_from_ir(self, ir):
+        text = self.find_phdr(".text")
+        text.phdr.set_offset(self, self.curr_addr, text.addr)
+        text.phdr.set_vaddr(self, self.curr_addr, text.addr)
+        text.phdr.set_paddr(self, self.curr_addr, text.addr)
+        text.phdr.set_flags(self, 5, text.addr)
+        st = self.curr_addr
+
+        # gen .text stuff
+        for _ in ir:
+            pass
+
+        self.ehdr.set_entry(self, 0x400000 + self.curr_addr)
+        self.mov_reg_to_reg(Reg.rdi, Reg.rsp)
+        # self.call("main")
+        self.mov_int_to_reg(Reg.rax, 60)
+        self.mov_int_to_reg(Reg.rdi, 0)
+        self.syscall()
+
+        sz = self.curr_addr - st
+        text.phdr.set_filesz(self, sz, text.addr)
+        text.phdr.set_memsz(self, sz, text.addr)
+
+    def mov_reg_to_reg(self, r1, r2):
+        if r1 == Reg.rdi and r2 == Reg.rsp:
+            self.buf += b"\x48\x89\xe7"
+        else:
+            assert False, f"Unreachable in `mov_reg_to_reg`, \"mov {Reg(r1).name}, {Reg(r2).name}\" is not implemented"
+
+    def mov_int_to_reg(self, reg, val):
+        if val >= 2**32:
+            self.buf += b"\x48"
+        match reg:
+            case Reg.rax:
+                self.buf += b"\xb8"
+            case Reg.rbx:
+                self.buf += b"\xbb"
+            case Reg.rcx:
+                self.buf += b"\xb9"
+            case Reg.rdx:
+                self.buf += b"\xba"
+            case Reg.rsi:
+                self.buf += b"\xbe"
+            case Reg.rdi:
+                self.buf += b"\xbf"
+            case Reg.rbp:
+                self.buf += b"\xbd"
+            case Reg.rsp:
+                self.buf += b"\xbc"
+        if val >= 2**32:
+            self.write_u64(val)
+        else:
+            self.write_u32(val)
+
+    def syscall(self):
+        self.buf += b"\x0f\x05"
+
+    def call(self, name):
+        self.buf += b"\xe8"
+        __rela = lambda x: None
+        __rela.name = name
+        __rela.addr = self.curr_addr
+        self.rela.append(__rela)
+        self.write_u64(0)
 
     def gen_hello_world(self):
         text = self.find_phdr(".text")
@@ -59,8 +140,9 @@ class Gen:
         text.phdr.set_memsz(self, sz, text.addr)
 
     def gen_data(self):
-        self.write_u64_at(self.curr_addr + 0x400000, self.symbols[0][1])
-        self.write(b"Hello World\n")
+        pass
+        # self.write_u64_at(self.curr_addr + 0x400000, self.symbols[0][1])
+        # self.write(b"Hello World\n")
 
     def gen_program_headers(self):
         self.ehdr.set_phoff(self, self.curr_addr)
