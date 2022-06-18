@@ -100,6 +100,21 @@ class Elf64_Phdr:
         gen.write_u64(self.p_memsz)
         gen.write_u64(self.p_align)
 
+    def set_offset(self, gen, addr, at):
+        gen.write_u64_at(addr, self.off_offset + at)
+
+    def set_vaddr(self, gen, addr, at):
+        gen.write_u64_at(addr + 0x400000, self.off_vaddr + at)
+
+    def set_paddr(self, gen, addr, at):
+        gen.write_u64_at(addr + 0x400000, self.off_paddr + at)
+
+    def set_filesz(self, gen, addr, at):
+        gen.write_u64_at(addr, self.off_filesz + at)
+
+    def set_memsz(self, gen, addr, at):
+        gen.write_u64_at(addr, self.off_memsz + at)
+
     def set_typ(self, gen, addr, typ):
         self.sh_type = typ
         gen.write_u32_at(typ, self.off_type + addr)

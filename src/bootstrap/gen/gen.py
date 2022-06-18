@@ -11,10 +11,24 @@ class Gen:
         self.phdrs = []
         self.ehdr = Elf64_Ehdr()
 
+        # temp
+        self.hello_world_addr = b"\x00\x00\x00\x00\x00\x00\x00\x00"
+
     def gen_exec(self):
         self.ehdr.emit(self)
-        self.ehdr.set_entry(self, 0x401100)
         self.gen_program_headers()
+        text = self.find_phdr(".text")
+        text.phdr.set_offset(self, self.curr_addr, text.addr)
+        text.phdr.set_vaddr(self, self.curr_addr, text.addr)
+        text.phdr.set_paddr(self, self.curr_addr, text.addr)
+        self.ehdr.set_entry(self, 0x400000 + self.curr_addr)
+        sz = self.gen_hello_world()
+        text.phdr.set_filesz(self, sz, text.addr)
+        text.phdr.set_memsz(self, sz, text.addr)
+
+        __null = self.find_phdr("")
+        __null.phdr.set_vaddr(self, 0, __null.addr)
+        __null.phdr.set_paddr(self, 0, __null.addr)
 
         self.gen_section_headers()
 
@@ -24,6 +38,19 @@ class Gen:
         except FileExistsError:
             with open(self.out_name, "xb") as f:
                 f.write(self.buf)
+
+    def gen_hello_world(self):
+        st = self.curr_addr
+        self.buf += b"\xbf\x01\x00\x00\x00"              #  mov edi, 1
+        self.buf += b"\x48\xbe" + self.hello_world_addr  #  mov rsi, HW_STRING
+        self.buf += b"\xba\x0c\x00\x00\x00"              #  mov edx, 12
+        self.buf += b"\xb8\x01\x00\x00\x00"              #  mov eax, 1
+        self.buf += b"\x0f\x05"                          #  syscall
+
+        self.buf += b"\xbf\x00\x00\x00\x00"              #  mov edi, 0
+        self.buf += b"\xb8\x3c\x00\x00\x00"              #  mov eax, 60
+        self.buf += b"\x0f\x05"                          #  syscall
+        return self.curr_addr - st
 
     def gen_program_headers(self):
         self.ehdr.set_phoff(self, self.curr_addr)
@@ -60,6 +87,11 @@ class Gen:
         for shdr in self.shdrs:
             if shdr.name == name:
                 return shdr
+
+    def find_phdr(self, name):
+        for phdr in self.phdrs:
+            if phdr.name == name:
+                return phdr
 
     def emit_shstrtab(self, shstrtab):
         buf = bytes()
