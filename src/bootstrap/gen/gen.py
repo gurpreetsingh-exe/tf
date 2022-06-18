@@ -25,6 +25,7 @@ class Gen:
         __null.phdr.set_paddr(self, 0, __null.addr)
         __null.phdr.set_flags(self, 4, __null.addr)
 
+        self.gen_data()
         self.gen_section_headers()
 
         try:
@@ -45,7 +46,9 @@ class Gen:
 
         st = self.curr_addr
         self.buf += b"\xbf\x01\x00\x00\x00"              #  mov edi, 1
-        self.buf += b"\x48\xbe" + self.hello_world_addr  #  mov rsi, HW_STRING
+        self.buf += b"\x48\xbe"
+        self.symbols.append(["hw", self.curr_addr])
+        self.buf += self.hello_world_addr
         self.buf += b"\xba\x0c\x00\x00\x00"              #  mov edx, 12
         self.buf += b"\xb8\x01\x00\x00\x00"              #  mov eax, 1
         self.buf += b"\x0f\x05"                          #  syscall
@@ -57,6 +60,10 @@ class Gen:
         sz = self.curr_addr - st
         text.phdr.set_filesz(self, sz, text.addr)
         text.phdr.set_memsz(self, sz, text.addr)
+
+    def gen_data(self):
+        self.write_u64_at(self.curr_addr + 0x400000, self.symbols[0][1])
+        self.write(b"Hello World\n")
 
     def gen_program_headers(self):
         self.ehdr.set_phoff(self, self.curr_addr)
