@@ -1,7 +1,7 @@
 from enum import Enum, auto
 import os
 from .elf import *
-
+from Parser import *
 
 class Reg(Enum):
     rax = auto()
@@ -12,7 +12,11 @@ class Reg(Enum):
     rdi = auto()
     rbp = auto()
     rsp = auto()
+    r8  = auto()
+    r9  = auto()
+    r10 = auto()
 
+arg_regs = [Reg.rdi, Reg.rsi, Reg.rdx, Reg.r10, Reg.r8, Reg.r9]
 
 class Gen:
     def __init__(self, out_name):
@@ -27,16 +31,23 @@ class Gen:
         self.ehdr = Elf64_Ehdr()
         self.main = 0
 
+        self.var_offset = 0
+        self.data = {}
+
     def gen_exec(self, ir):
         self.ehdr.emit(self)
         self.gen_program_headers()
         # self.gen_hello_world()
         self.gen_text_from_ir(ir)
 
+        self.patch_labels()
+
         __null = self.find_phdr("")
         __null.phdr.set_vaddr(self, 0, __null.addr)
         __null.phdr.set_paddr(self, 0, __null.addr)
         __null.phdr.set_flags(self, 4, __null.addr)
+        __null.phdr.set_filesz(self, self.curr_addr, __null.addr)
+        __null.phdr.set_memsz(self, self.curr_addr, __null.addr)
 
         self.gen_data()
         self.gen_section_headers()
@@ -49,6 +60,50 @@ class Gen:
                 f.write(self.buf)
         os.chmod(self.out_name, 0o755)
 
+    def new_sym(self, name):
+        for sym in self.symbols:
+            if sym.name == name:
+                print(f"Symbol re-definition {name}")
+                exit(1)
+        __sym = lambda x: None
+        __sym.name = name
+        __sym.addr = self.curr_addr
+        self.symbols.append(__sym)
+
+    def find_symbol(self, name):
+        sym = [s for s in self.symbols if s.name == name]
+        if sym:
+            return sym[0].addr
+
+    def patch_labels(self):
+        for rela in self.rela:
+            if (addr:= self.find_symbol(rela.name)) != None:
+                self.write_u32_at(0xffffffff - (rela.addr + 4 - addr - 1), rela.addr)
+
+    def gen_body(self, ir):
+        i = 0
+        while i < len(ir):
+            op = ir[i]
+            if op[0] == IRKind.PushInt:
+                self.push_int(int(op[1]))
+            elif op[0] == IRKind.Func:
+                self.var_offset = 0
+                self.new_sym(op[1])
+                self.push_reg(Reg.rbp)
+                self.mov_reg_to_reg(Reg.rbp, Reg.rsp)
+                local_var_count = op[2][4]
+                self.sub_reg(Reg.rsp, local_var_count * 8)
+                nargs = len(op[2][1])
+                regs = arg_regs[:nargs]
+                for reg in regs:
+                    self.push_reg(reg)
+                self.gen_body(op[3])
+                self.pop_reg(Reg.rbp)
+                self.ret()
+            else:
+                print(op)
+            i += 1
+
     def gen_text_from_ir(self, ir):
         text = self.find_phdr(".text")
         text.phdr.set_offset(self, self.curr_addr, text.addr)
@@ -58,12 +113,11 @@ class Gen:
         st = self.curr_addr
 
         # gen .text stuff
-        for _ in ir:
-            pass
+        self.gen_body(ir)
 
         self.ehdr.set_entry(self, 0x400000 + self.curr_addr)
         self.mov_reg_to_reg(Reg.rdi, Reg.rsp)
-        # self.call("main")
+        self.call("main")
         self.mov_int_to_reg(Reg.rax, 60)
         self.mov_int_to_reg(Reg.rdi, 0)
         self.syscall()
@@ -75,8 +129,18 @@ class Gen:
     def mov_reg_to_reg(self, r1, r2):
         if r1 == Reg.rdi and r2 == Reg.rsp:
             self.buf += b"\x48\x89\xe7"
+        elif r1 == Reg.rbp and r2 == Reg.rsp:
+            self.buf += b"\x48\x89\xe5"
         else:
             assert False, f"Unreachable in `mov_reg_to_reg`, \"mov {Reg(r1).name}, {Reg(r2).name}\" is not implemented"
+
+    def pop_reg(self, reg):
+        match reg:
+            case Reg.rbp:
+                self.buf += b"\x5d"
+
+    def ret(self):
+        self.buf += b"\xc3"
 
     def mov_int_to_reg(self, reg, val):
         if val >= 2**32:
@@ -103,6 +167,47 @@ class Gen:
         else:
             self.write_u32(val)
 
+    def push_int(self, val):
+        if val >= 2**32:
+            print(val)
+
+    def push_reg(self, reg):
+        match reg:
+            case Reg.rax:
+                self.buf += b"\x50"
+            case Reg.rbx:
+                self.buf += b"\x53"
+            case Reg.rcx:
+                self.buf += b"\x51"
+            case Reg.rdx:
+                self.buf += b"\x52"
+            case Reg.rsi:
+                self.buf += b"\x56"
+            case Reg.rdi:
+                self.buf += b"\x57"
+            case Reg.rbp:
+                self.buf += b"\x55"
+            case Reg.rsp:
+                self.buf += b"\x54"
+            case Reg.r8:
+                self.buf += b"\x41\x50"
+            case Reg.r9:
+                self.buf += b"\x41\x51"
+            case Reg.r10:
+                self.buf += b"\x41\x52"
+
+    def sub_reg(self, reg, val):
+        byt = val <= 0xff // 2
+        val = val & (2**32) // 2 - 1
+        match reg:
+            case Reg.rsp:
+                mid = b"\x83" if byt else b"\x81"
+                self.buf += b"\x48" + mid + b"\xec"
+        if byt:
+            self.buf.append(val)
+        else:
+            self.write_u32(val)
+
     def syscall(self):
         self.buf += b"\x0f\x05"
 
@@ -112,7 +217,7 @@ class Gen:
         __rela.name = name
         __rela.addr = self.curr_addr
         self.rela.append(__rela)
-        self.write_u64(0)
+        self.write_u32(0)
 
     def gen_hello_world(self):
         text = self.find_phdr(".text")
@@ -160,6 +265,14 @@ class Gen:
         self.create_shdr(".symtab", 2, 24)
         self.create_shdr(".strtab", 3, 0)
         self.create_shdr(".shstrtab", 3, 0)
+
+        text_shdr = self.find_shdr(".text")
+        text_phdr = self.find_phdr(".text")
+        # self.write_u64_at(text_phdr.phdr.p_filesz, text_shdr.addr)
+        text_shdr.shdr.set_size(self, text_phdr.phdr.p_filesz, text_shdr.addr)
+        text_shdr.shdr.set_offset(self, text_phdr.phdr.p_offset, text_shdr.addr)
+        text_shdr.shdr.set_offset(self, text_phdr.phdr.p_offset, text_shdr.addr)
+        text_shdr.shdr.set_addr(self, text_phdr.phdr.p_vaddr, text_shdr.addr)
 
         symtab = self.find_shdr(".symtab")
         symtab.shdr.set_link(self, symtab.addr, 4)

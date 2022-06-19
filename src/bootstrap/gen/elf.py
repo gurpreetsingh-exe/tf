@@ -79,7 +79,7 @@ class Elf64_Phdr:
         self.p_paddr = 0
         self.p_filesz = 0
         self.p_memsz = 0
-        self.p_align = 0
+        self.p_align = 0x1000
 
         self.off_type = 0
         self.off_flags = 4
@@ -108,18 +108,23 @@ class Elf64_Phdr:
         gen.write_u32_at(flag, self.off_flags + at)
 
     def set_offset(self, gen, addr, at):
+        self.p_offset = addr
         gen.write_u64_at(addr, self.off_offset + at)
 
     def set_vaddr(self, gen, addr, at):
+        self.p_vaddr = addr + 0x400000
         gen.write_u64_at(addr + 0x400000, self.off_vaddr + at)
 
     def set_paddr(self, gen, addr, at):
+        self.p_paddr = addr + 0x400000
         gen.write_u64_at(addr + 0x400000, self.off_paddr + at)
 
     def set_filesz(self, gen, addr, at):
+        self.p_filesz = addr
         gen.write_u64_at(addr, self.off_filesz + at)
 
     def set_memsz(self, gen, addr, at):
+        self.p_memsz = addr
         gen.write_u64_at(addr, self.off_memsz + at)
 
 
@@ -169,6 +174,9 @@ class Elf64_Shdr:
 
     def set_offset(self, gen, addr, at):
         gen.write_u64_at(addr, self.off_offset + at)
+
+    def set_addr(self, gen, addr, at):
+        gen.write_u64_at(addr, self.off_addr + at)
 
     def set_size(self, gen, size, at):
         gen.write_u64_at(size, self.off_size + at)
