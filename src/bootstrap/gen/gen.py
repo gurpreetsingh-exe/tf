@@ -126,6 +126,7 @@ class Gen:
                 for reg in regs:
                     self.push_reg(reg)
                 self.gen_body(op[3])
+                self.add_reg(Reg.rsp, local_var_count * 8)
                 self.pop_reg(Reg.rbp)
                 self.ret()
             else:
@@ -231,6 +232,18 @@ class Gen:
             case Reg.rsp:
                 mid = b"\x83" if byt else b"\x81"
                 self.buf += b"\x48" + mid + b"\xec"
+        if byt:
+            self.buf.append(val)
+        else:
+            self.write_u32(val)
+
+    def add_reg(self, reg, val):
+        byt = val <= 0xff // 2
+        val = val & (2**32) // 2 - 1
+        match reg:
+            case Reg.rsp:
+                mid = b"\x83" if byt else b"\x81"
+                self.buf += b"\x48" + mid + b"\xc4"
         if byt:
             self.buf.append(val)
         else:
