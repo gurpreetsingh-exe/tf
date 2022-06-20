@@ -197,8 +197,13 @@ class Gen:
             self.write_u32(val)
 
     def push_int(self, val):
-        if val >= 2**32:
-            print(val)
+        byt = val <= 0xff // 2
+        if byt:
+            self.buf += b"\x6a"
+            self.write_u8(val)
+        else:
+            self.buf += b"\x68"
+            self.write_u32(val)
 
     def push_reg(self, reg):
         match reg:
