@@ -108,12 +108,27 @@ class Gen:
             name += len(sym.name) + 1
         self.symbol_table = sym_tab
 
+    def binary_op(self, op):
+        match op[1]:
+            case BinaryKind.ADD:
+                if op[2] == TypeKind.INT:
+                    self.pop_reg(Reg.rax)
+                    self.pop_reg(Reg.rbx)
+                    self.add_reg_to_reg(Reg.rax, Reg.rbx)
+                    self.push_reg(Reg.rax)
+                elif op[2] == TypeKind.FLOAT:
+                    assert False, "float math is not implemented"
+                else:
+                    assert False, "Unreachable in binary_op()"
+
     def gen_body(self, ir):
         i = 0
         while i < len(ir):
             op = ir[i]
             if op[0] == IRKind.PushInt:
                 self.push_int(int(op[1]))
+            elif op[0] == IRKind.Binary:
+                self.binary_op(op)
             elif op[0] == IRKind.Func:
                 self.var_offset = 0
                 self.new_sym(op[1])
@@ -163,8 +178,16 @@ class Gen:
         else:
             assert False, f"Unreachable in `mov_reg_to_reg`, \"mov {Reg(r1).name}, {Reg(r2).name}\" is not implemented"
 
+    def add_reg_to_reg(self, r1, r2):
+        if r1 == Reg.rax and r2 == Reg.rbx:
+            self.buf += b"\x48\x01\xd8"
+
     def pop_reg(self, reg):
         match reg:
+            case Reg.rax:
+                self.buf += b"\x58"
+            case Reg.rbx:
+                self.buf += b"\x5b"
             case Reg.rbp:
                 self.buf += b"\x5d"
 
