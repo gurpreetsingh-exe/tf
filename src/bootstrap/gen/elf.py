@@ -185,11 +185,30 @@ class Elf64_Shdr:
         self.sh_link = link
         gen.write_u32_at(link, self.off_link + addr)
 
+    def set_info(self, gen, addr, info):
+        self.sh_info = info
+        gen.write_u32_at(info, self.off_info + addr)
+
 class Elf64_Sym:
-    def __init__(self):
-        self.st_name = 0
-        self.st_info = 0
-        self.st_other = 0
-        self.st_shndx = 0
-        self.st_value = 0
-        self.st_size = 0
+    def __init__(self, name, info, other, shndx, value, size):
+        self.st_name = name
+        self.st_info = info
+        self.st_other = other
+        self.st_shndx = shndx
+        self.st_value = value
+        self.st_size = size
+
+        self.off_name = 0
+        self.off_info = 4
+        self.off_other = 5
+        self.off_shndx = 6
+        self.off_value = 8
+        self.off_size = 16
+
+    def emit(self, gen):
+        gen.write_u32(self.st_name)
+        gen.buf.append(self.st_info)
+        gen.buf.append(self.st_other)
+        gen.write_u16(self.st_shndx)
+        gen.write_u64(self.st_value)
+        gen.write_u64(self.st_size)

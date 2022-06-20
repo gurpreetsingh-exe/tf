@@ -24,7 +24,7 @@ class Gen:
         self.buf = bytearray()
         self.symbols = []
         self.strings = []
-        self.labels = []
+        self.symbol_table = None
         self.shdrs = []
         self.phdrs = []
         self.rela = []
@@ -39,6 +39,7 @@ class Gen:
         self.gen_program_headers()
         # self.gen_hello_world()
         self.gen_text_from_ir(ir)
+        self.align()
 
         self.patch_labels()
 
@@ -50,7 +51,16 @@ class Gen:
         __null.phdr.set_memsz(self, self.curr_addr, __null.addr)
 
         self.gen_data()
+        self.gen_sym_tab()
+
+        strtab_id = self.curr_addr
+        self.write_u8(0)
+        for sym in self.symbols:
+            self.buf += bytes(sym.name, 'utf-8') + b'\x00'
+        strtab_sz = self.curr_addr - strtab_id
+
         self.gen_section_headers()
+        self.align()
 
         try:
             with open(self.out_name, "wb") as f:
@@ -79,6 +89,17 @@ class Gen:
         for rela in self.rela:
             if (addr:= self.find_symbol(rela.name)) != None:
                 self.write_u32_at(0xffffffff - (rela.addr + 4 - addr - 1), rela.addr)
+
+    def gen_sym_tab(self):
+        sym_tab = lambda x: None
+        sym_tab.addr = self.curr_addr
+        name = 0
+        Elf64_Sym(0, 0, 0, 0, 0, 0).emit(self)
+        for i, sym in enumerate(self.symbols):
+            symb = Elf64_Sym(name, 0, 0, i, 0x400000 + sym.addr, 0)
+            symb.emit(self)
+            name += len(sym.name)
+        self.symbol_table = sym_tab
 
     def gen_body(self, ir):
         i = 0
@@ -249,11 +270,16 @@ class Gen:
         # self.write_u64_at(self.curr_addr + 0x400000, self.symbols[0][1])
         # self.write(b"Hello World\n")
 
+    def align(self):
+        print(f"Align at {hex(0x400000 + self.curr_addr)} by {16 - self.curr_addr % 16}")
+        self.buf += bytes(16 - self.curr_addr % 16)
+
     def gen_program_headers(self):
         self.ehdr.set_phoff(self, self.curr_addr)
         self.create_phdr("", 1)
         self.create_phdr(".text", 1)
         self.create_phdr(".data", 1)
+        self.align()
 
         self.ehdr.set_phnum(self, len(self.phdrs))
 
@@ -270,7 +296,6 @@ class Gen:
         text_phdr = self.find_phdr(".text")
         # self.write_u64_at(text_phdr.phdr.p_filesz, text_shdr.addr)
         text_shdr.shdr.set_size(self, text_phdr.phdr.p_filesz, text_shdr.addr)
-        text_shdr.shdr.set_offset(self, text_phdr.phdr.p_offset, text_shdr.addr)
         text_shdr.shdr.set_offset(self, text_phdr.phdr.p_offset, text_shdr.addr)
         text_shdr.shdr.set_addr(self, text_phdr.phdr.p_vaddr, text_shdr.addr)
 
