@@ -61,6 +61,13 @@ class Gen:
 
         self.gen_section_headers()
         self.align()
+        symtab = self.find_shdr(".symtab")
+        symtab.shdr.set_offset(self, self.symbol_table.addr, symtab.addr)
+        symtab.shdr.set_size(self, (len(self.symbols) + 1) * 24, symtab.addr)
+
+        strtab = self.find_shdr(".strtab")
+        strtab.shdr.set_offset(self, strtab_id, strtab.addr)
+        strtab.shdr.set_size(self, strtab_sz, strtab.addr)
 
         try:
             with open(self.out_name, "wb") as f:
@@ -93,12 +100,12 @@ class Gen:
     def gen_sym_tab(self):
         sym_tab = lambda x: None
         sym_tab.addr = self.curr_addr
-        name = 0
+        name = 1
         Elf64_Sym(0, 0, 0, 0, 0, 0).emit(self)
         for i, sym in enumerate(self.symbols):
-            symb = Elf64_Sym(name, 0, 0, i, 0x400000 + sym.addr, 0)
+            symb = Elf64_Sym(name, 0, 0, 1, 0x400000 + sym.addr, 0)
             symb.emit(self)
-            name += len(sym.name)
+            name += len(sym.name) + 1
         self.symbol_table = sym_tab
 
     def gen_body(self, ir):
@@ -301,6 +308,7 @@ class Gen:
 
         symtab = self.find_shdr(".symtab")
         symtab.shdr.set_link(self, symtab.addr, 4)
+        # symtab.shdr.set_info(self, symtab.addr, 10)
 
         self.ehdr.set_shnum(self, len(self.shdrs))
 
