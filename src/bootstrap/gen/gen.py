@@ -145,6 +145,10 @@ class Gen:
                 self.add_reg(Reg.rsp, local_var_count * 8)
                 self.pop_reg(Reg.rbp)
                 self.ret()
+            elif op[0] == IRKind.Intrinsic:
+                if op[1] == IntrinsicKind.PRINT:
+                    self.pop_reg(Reg.rdi)
+                    self.call("print")
             else:
                 print(op)
             i += 1
@@ -156,6 +160,16 @@ class Gen:
         text.phdr.set_paddr(self, self.curr_addr, text.addr)
         text.phdr.set_flags(self, 5, text.addr)
         st = self.curr_addr
+
+        # I'm not cheating you're cheating
+        self.new_sym("print")
+        self.buf += b"\x49\xb8\xcd\xcc\xcc\xcc\xcc\xcc\xcc\xcc\x48\x83\xec\x28\xc6\x44"
+        self.buf += b"\x24\x1f\x0a\x4c\x8d\x4c\x24\x1e\x4c\x89\xc9\x48\x89\xf8\x49\xf7"
+        self.buf += b"\xe0\x48\x89\xf8\x48\xc1\xea\x03\x48\x8d\x34\x92\x48\x01\xf6\x48"
+        self.buf += b"\x29\xf0\x48\x89\xce\x48\x83\xe9\x01\x83\xc0\x30\x88\x41\x01\x48"
+        self.buf += b"\x89\xf8\x48\x89\xd7\x48\x83\xf8\x09\x77\xd0\x41\x8d\x51\x02\xb8"
+        self.buf += b"\x20\x00\x00\x00\xbf\x01\x00\x00\x00\x29\xf2\x48\x63\xd2\x48\x29"
+        self.buf += b"\xd0\x48\x8d\x34\x04\xb8\x01\x00\x00\x00\x0f\x05\x48\x83\xc4\x28\xc3"
 
         # gen .text stuff
         self.gen_body(ir)
@@ -192,6 +206,10 @@ class Gen:
                 self.buf += b"\x5b"
             case Reg.rbp:
                 self.buf += b"\x5d"
+            case Reg.rdi:
+                self.buf += b"\x5f"
+            case _:
+                assert False, f"not implemented in pop_reg(), \"pop {Reg(reg).name}\""
 
     def ret(self):
         self.buf += b"\xc3"
