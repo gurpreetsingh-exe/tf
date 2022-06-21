@@ -47,14 +47,13 @@ class Gen:
         __null.phdr.set_vaddr(self, 0, __null.addr)
         __null.phdr.set_paddr(self, 0, __null.addr)
         __null.phdr.set_flags(self, 4, __null.addr)
-        __null.phdr.set_filesz(self, self.curr_addr, __null.addr)
-        __null.phdr.set_memsz(self, self.curr_addr, __null.addr)
 
         self.gen_data()
         self.gen_sym_tab()
 
         strtab_id = self.curr_addr
         self.write_u8(0)
+        self.buf += bytes(f"main.asm", 'utf-8') + b'\x00'
         for sym in self.symbols:
             self.buf += bytes(sym.name, 'utf-8') + b'\x00'
         strtab_sz = self.curr_addr - strtab_id
@@ -63,7 +62,7 @@ class Gen:
         self.align()
         symtab = self.find_shdr(".symtab")
         symtab.shdr.set_offset(self, self.symbol_table.addr, symtab.addr)
-        symtab.shdr.set_size(self, (len(self.symbols) + 1) * 24, symtab.addr)
+        symtab.shdr.set_size(self, (len(self.symbols) + 2) * 24, symtab.addr)
 
         strtab = self.find_shdr(".strtab")
         strtab.shdr.set_offset(self, strtab_id, strtab.addr)
@@ -102,6 +101,8 @@ class Gen:
         sym_tab.addr = self.curr_addr
         name = 1
         Elf64_Sym(0, 0, 0, 0, 0, 0).emit(self)
+        Elf64_Sym(name, 4, 0, 65521, 0, 0).emit(self)
+        name += len("main.asm") + 1
         for i, sym in enumerate(self.symbols):
             symb = Elf64_Sym(name, 0, 0, 1, 0x400000 + sym.addr, 0)
             symb.emit(self)
@@ -160,6 +161,7 @@ class Gen:
         self.gen_body(ir)
 
         self.ehdr.set_entry(self, 0x400000 + self.curr_addr)
+        self.new_sym("_start")
         self.mov_reg_to_reg(Reg.rdi, Reg.rsp)
         self.call("main")
         self.mov_int_to_reg(Reg.rax, 60)
@@ -319,7 +321,6 @@ class Gen:
         # self.write(b"Hello World\n")
 
     def align(self):
-        print(f"Align at {hex(0x400000 + self.curr_addr)} by {16 - self.curr_addr % 16}")
         self.buf += bytes(16 - self.curr_addr % 16)
 
     def gen_program_headers(self):
@@ -327,6 +328,10 @@ class Gen:
         self.create_phdr("", 1)
         self.create_phdr(".text", 1)
         self.create_phdr(".data", 1)
+        __null = self.find_phdr("")
+        __null.phdr.set_filesz(self, self.curr_addr, __null.addr)
+        __null.phdr.set_memsz(self, self.curr_addr, __null.addr)
+
         self.align()
 
         self.ehdr.set_phnum(self, len(self.phdrs))
