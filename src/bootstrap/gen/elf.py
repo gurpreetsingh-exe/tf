@@ -181,9 +181,13 @@ class Elf64_Shdr:
     def set_size(self, gen, size, at):
         gen.write_u64_at(size, self.off_size + at)
 
-    def set_link(self, gen, addr, link):
+    def set_link(self, gen, link, at):
         self.sh_link = link
-        gen.write_u32_at(link, self.off_link + addr)
+        gen.write_u32_at(link, self.off_link + at)
+
+    def set_flags(self, gen, flags, at):
+        self.sh_flags = flags
+        gen.write_u32_at(flags, self.off_flags + at)
 
     def set_info(self, gen, addr, info):
         self.sh_info = info

@@ -369,10 +369,11 @@ class Gen:
         text_shdr.shdr.set_size(self, text_phdr.phdr.p_filesz, text_shdr.addr)
         text_shdr.shdr.set_offset(self, text_phdr.phdr.p_offset, text_shdr.addr)
         text_shdr.shdr.set_addr(self, text_phdr.phdr.p_vaddr, text_shdr.addr)
+        text_shdr.shdr.set_flags(self, 6, text_shdr.addr)
 
         symtab = self.find_shdr(".symtab")
-        symtab.shdr.set_link(self, symtab.addr, 4)
-        # symtab.shdr.set_info(self, symtab.addr, 10)
+        symtab.shdr.set_link(self, 4, symtab.addr)
+        symtab.shdr.set_info(self, symtab.addr, 5)
 
         self.ehdr.set_shnum(self, len(self.shdrs))
 
