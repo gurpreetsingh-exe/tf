@@ -41,14 +41,13 @@ class Gen:
         self.gen_text_from_ir(ir)
         self.align()
 
-        self.patch_labels()
-
         __null = self.find_phdr("")
         __null.phdr.set_vaddr(self, 0, __null.addr)
         __null.phdr.set_paddr(self, 0, __null.addr)
         __null.phdr.set_flags(self, 4, __null.addr)
 
         self.gen_data()
+        self.patch_labels()
         self.gen_sym_tab()
 
         strtab_id = self.curr_addr
@@ -76,13 +75,14 @@ class Gen:
                 f.write(self.buf)
         os.chmod(self.out_name, 0o755)
 
-    def new_sym(self, name):
+    def new_sym(self, name, typ):
         for sym in self.symbols:
             if sym.name == name:
                 print(f"Symbol re-definition {name}")
                 exit(1)
         __sym = lambda x: None
         __sym.name = name
+        __sym.typ = typ
         __sym.addr = self.curr_addr
         self.symbols.append(__sym)
 
@@ -93,8 +93,11 @@ class Gen:
 
     def patch_labels(self):
         for rela in self.rela:
-            if (addr:= self.find_symbol(rela.name)) != None:
-                self.write_u32_at(0xffffffff - (rela.addr + 4 - addr - 1), rela.addr)
+                if (addr:= self.find_symbol(rela.name)) != None:
+                    if rela.typ:
+                        self.write_u32_at(0xffffffff - (rela.addr + 4 - addr - 1), rela.addr)
+                    else:
+                        self.write_u32_at(0x400000 + addr, rela.addr)
 
     def gen_sym_tab(self):
         sym_tab = lambda x: None
@@ -104,7 +107,7 @@ class Gen:
         Elf64_Sym(name, 4, 0, 65521, 0, 0).emit(self)
         name += len("main.asm") + 1
         for i, sym in enumerate(self.symbols):
-            symb = Elf64_Sym(name, 0, 0, 1, 0x400000 + sym.addr, 0)
+            symb = Elf64_Sym(name, 0, 0, sym.typ, 0x400000 + sym.addr, 0)
             symb.emit(self)
             name += len(sym.name) + 1
         self.symbol_table = sym_tab
@@ -128,11 +131,15 @@ class Gen:
             op = ir[i]
             if op[0] == IRKind.PushInt:
                 self.push_int(int(op[1]))
+            elif op[0] == IRKind.PushStr:
+                self.buf += b"\x68"
+                self.label(f"S{op[2]}")
+                self.strings.append(op[1:-1])
             elif op[0] == IRKind.Binary:
                 self.binary_op(op)
             elif op[0] == IRKind.Func:
                 self.var_offset = 0
-                self.new_sym(op[1])
+                self.new_sym(op[1], 1)
                 self.push_reg(Reg.rbp)
                 self.mov_reg_to_reg(Reg.rbp, Reg.rsp)
                 local_var_count = op[2][4]
@@ -162,7 +169,7 @@ class Gen:
         st = self.curr_addr
 
         # I'm not cheating you're cheating
-        self.new_sym("print")
+        self.new_sym("print", 1)
         self.buf += b"\x49\xb8\xcd\xcc\xcc\xcc\xcc\xcc\xcc\xcc\x48\x83\xec\x28\xc6\x44"
         self.buf += b"\x24\x1f\x0a\x4c\x8d\x4c\x24\x1e\x4c\x89\xc9\x48\x89\xf8\x49\xf7"
         self.buf += b"\xe0\x48\x89\xf8\x48\xc1\xea\x03\x48\x8d\x34\x92\x48\x01\xf6\x48"
@@ -174,8 +181,8 @@ class Gen:
         # gen .text stuff
         self.gen_body(ir)
 
+        self.new_sym("_start", 1)
         self.ehdr.set_entry(self, 0x400000 + self.curr_addr)
-        self.new_sym("_start")
         self.mov_reg_to_reg(Reg.rdi, Reg.rsp)
         self.call("main")
         self.mov_int_to_reg(Reg.rax, 60)
@@ -305,6 +312,15 @@ class Gen:
         __rela = lambda x: None
         __rela.name = name
         __rela.addr = self.curr_addr
+        __rela.typ = 1
+        self.rela.append(__rela)
+        self.write_u32(0)
+
+    def label(self, name):
+        __rela = lambda x: None
+        __rela.name = name
+        __rela.addr = self.curr_addr
+        __rela.typ = 0
         self.rela.append(__rela)
         self.write_u32(0)
 
@@ -334,9 +350,20 @@ class Gen:
         text.phdr.set_memsz(self, sz, text.addr)
 
     def gen_data(self):
-        pass
-        # self.write_u64_at(self.curr_addr + 0x400000, self.symbols[0][1])
-        # self.write(b"Hello World\n")
+        data = self.find_phdr(".data")
+        data.phdr.set_offset(self, self.curr_addr, data.addr)
+        data.phdr.set_vaddr(self, self.curr_addr, data.addr)
+        data.phdr.set_paddr(self, self.curr_addr, data.addr)
+
+        st = self.curr_addr
+        for s in self.strings:
+            self.new_sym(f"S{s[1]}", 2)
+            self.write(s[0] + b"\x00")
+        sz = self.curr_addr - st
+        data.phdr.set_filesz(self, sz, data.addr)
+        data.phdr.set_memsz(self, sz, data.addr)
+        # TODO: find out why this would segfault when set to 6 (RW)
+        data.phdr.set_flags(self, 7, data.addr)
 
     def align(self):
         self.buf += bytes(16 - self.curr_addr % 16)
@@ -365,15 +392,21 @@ class Gen:
 
         text_shdr = self.find_shdr(".text")
         text_phdr = self.find_phdr(".text")
-        # self.write_u64_at(text_phdr.phdr.p_filesz, text_shdr.addr)
         text_shdr.shdr.set_size(self, text_phdr.phdr.p_filesz, text_shdr.addr)
         text_shdr.shdr.set_offset(self, text_phdr.phdr.p_offset, text_shdr.addr)
         text_shdr.shdr.set_addr(self, text_phdr.phdr.p_vaddr, text_shdr.addr)
         text_shdr.shdr.set_flags(self, 6, text_shdr.addr)
 
+        data_shdr = self.find_shdr(".data")
+        data_phdr = self.find_phdr(".data")
+        data_shdr.shdr.set_size(self, data_phdr.phdr.p_filesz, data_shdr.addr)
+        data_shdr.shdr.set_offset(self, data_phdr.phdr.p_offset, data_shdr.addr)
+        data_shdr.shdr.set_addr(self, data_phdr.phdr.p_vaddr, data_shdr.addr)
+        data_shdr.shdr.set_flags(self, 3, data_shdr.addr)
+
         symtab = self.find_shdr(".symtab")
         symtab.shdr.set_link(self, 4, symtab.addr)
-        symtab.shdr.set_info(self, symtab.addr, 5)
+        symtab.shdr.set_info(self, symtab.addr, len(self.symbols) + 2)
 
         self.ehdr.set_shnum(self, len(self.shdrs))
 

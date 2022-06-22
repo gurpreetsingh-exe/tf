@@ -185,6 +185,9 @@ class Elf64_Shdr:
         self.sh_link = link
         gen.write_u32_at(link, self.off_link + at)
 
+    def set_align(self, gen, align, at):
+        gen.write_u64_at(align, self.off_addralign + at)
+
     def set_flags(self, gen, flags, at):
         self.sh_flags = flags
         gen.write_u32_at(flags, self.off_flags + at)
