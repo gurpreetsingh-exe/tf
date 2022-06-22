@@ -173,6 +173,7 @@ class Elf64_Shdr:
         gen.write_u32_at(typ, self.off_type + addr)
 
     def set_offset(self, gen, addr, at):
+        self.sh_offset = addr
         gen.write_u64_at(addr, self.off_offset + at)
 
     def set_addr(self, gen, addr, at):

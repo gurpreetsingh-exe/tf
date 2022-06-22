@@ -47,6 +47,10 @@ class Gen:
         __null.phdr.set_flags(self, 4, __null.addr)
 
         self.gen_data()
+        __bss_start = self.curr_addr
+        self.align()
+        self.new_sym("__bss_start", 3)
+        self.new_sym("mem", 3)
         self.patch_labels()
         self.gen_sym_tab()
 
@@ -62,6 +66,9 @@ class Gen:
         symtab = self.find_shdr(".symtab")
         symtab.shdr.set_offset(self, self.symbol_table.addr, symtab.addr)
         symtab.shdr.set_size(self, (len(self.symbols) + 2) * 24, symtab.addr)
+
+        bss = self.find_shdr(".bss")
+        bss.shdr.set_addr(self, 0x400000 + symtab.shdr.sh_offset, bss.addr)
 
         strtab = self.find_shdr(".strtab")
         strtab.shdr.set_offset(self, strtab_id, strtab.addr)
@@ -156,6 +163,9 @@ class Gen:
                 if op[1] == IntrinsicKind.PRINT:
                     self.pop_reg(Reg.rdi)
                     self.call("print")
+                elif op[1] == IntrinsicKind.MEM:
+                    self.buf += b"\x68"
+                    self.label("mem")
             else:
                 print(op)
             i += 1
@@ -386,6 +396,7 @@ class Gen:
         self.create_shdr("", 0, 0)
         self.create_shdr(".text", 1, 0)
         self.create_shdr(".data", 1, 0)
+        self.create_shdr(".bss", 8, 0)
         self.create_shdr(".symtab", 2, 24)
         self.create_shdr(".strtab", 3, 0)
         self.create_shdr(".shstrtab", 3, 0)
@@ -405,8 +416,13 @@ class Gen:
         data_shdr.shdr.set_flags(self, 3, data_shdr.addr)
 
         symtab = self.find_shdr(".symtab")
-        symtab.shdr.set_link(self, 4, symtab.addr)
+        symtab.shdr.set_link(self, len(self.shdrs) - 2, symtab.addr)
         symtab.shdr.set_info(self, symtab.addr, len(self.symbols) + 2)
+
+        bss = self.find_shdr(".bss")
+        bss.shdr.set_offset(self, data_phdr.phdr.p_offset + data_phdr.phdr.p_filesz, bss.addr)
+        bss.shdr.set_size(self, 1024, bss.addr)
+        bss.shdr.set_flags(self, 3, bss.addr)
 
         self.ehdr.set_shnum(self, len(self.shdrs))
 
