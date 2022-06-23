@@ -877,7 +877,10 @@ def run_command(args):
         buf += arg + " "
 
     sys.stdout.write(buf + "\n")
-    subprocess.call(args)
+    proc = subprocess.Popen(args)
+    proc.communicate()
+    if proc.returncode != 0:
+        exit(proc.returncode)
 
 def compile_program(ir, program_file):
     buffer = generate_x86_64_nasm_linux(ir)
