@@ -1,9 +1,6 @@
 import linux
 import panic
-
-macro assertion_failed {
-    1 "Assertion failed, " 18 write!
-}
+import mod_assert
 
 func main() {
     // drop
@@ -110,7 +107,7 @@ func main() {
     }
     0 let val4;
     &val4 75485 write8
-    &val4 read64 dup print 221 != if {
+    &val4 read64 221 != if {
         assertion_failed!
         panic!
     }
