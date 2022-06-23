@@ -188,7 +188,7 @@ class Gen:
                 for reg in reversed(arg_regs[:int(op[1])]):
                     self.pop_reg(reg)
             else:
-                print(op)
+                assert False, f"{op} is not implemented"
             i += 1
         self.scopes.pop()
 
