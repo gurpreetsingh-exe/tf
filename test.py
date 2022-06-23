@@ -21,7 +21,7 @@ except FileNotFoundError:
         pass
 
 for path in pathlib.Path(test_dir).iterdir():
-    if path.suffix != ".tf":
+    if path.suffix != ".tf" or path.stem.startswith("mod_"):
         continue
     file_path = str(path.absolute())
     file_name = path.name
