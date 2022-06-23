@@ -169,17 +169,15 @@ class Gen:
                 elif op[1] == IntrinsicKind.READ64:
                     self.pop_reg(Reg.rax)
                     self.mov_int_to_reg(Reg.rbx, 0)
-                    self.mov_load_to_reg(Reg.rbx, Reg.rax)
+                    self.buf += b"\x48\x8b\x18"
                     self.push_reg(Reg.rbx)
+                elif op[1] == IntrinsicKind.WRITE64:
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.buf += b"\x48\x89\x18"
             else:
                 print(op)
             i += 1
-
-    def mov_load_to_reg(self, r1, r2):
-        if r1 == Reg.rbx and r2 == Reg.rax:
-            self.buf += b"\x48\x8b\x18"
-        else:
-            assert False, "not implemented"
 
     def gen_text_from_ir(self, ir):
         text = self.find_phdr(".text")
