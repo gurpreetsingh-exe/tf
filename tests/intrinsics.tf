@@ -110,7 +110,7 @@ func main() {
     }
     0 let val4;
     &val4 75485 write8
-    &val4 read64 dup print 221 != if {
+    &val4 read64 221 != if {
         assertion_failed!
         panic!
     }
