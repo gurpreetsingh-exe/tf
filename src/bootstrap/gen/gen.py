@@ -31,6 +31,8 @@ class Gen:
         self.ehdr = Elf64_Ehdr()
         self.main = 0
 
+        self.scopes = []
+
         self.var_offset = 0
         self.data = {}
 
@@ -134,6 +136,7 @@ class Gen:
 
     def gen_body(self, ir):
         i = 0
+        self.scopes.append([])
         while i < len(ir):
             op = ir[i]
             if op[0] == IRKind.PushInt:
@@ -175,9 +178,16 @@ class Gen:
                     self.pop_reg(Reg.rbx)
                     self.pop_reg(Reg.rax)
                     self.buf += b"\x48\x89\x18"
+            elif op[0] == IRKind.Let:
+                reg = arg_regs[:len(op[1])]
+                for x, v in enumerate(reg):
+                    self.var_offset += 8
+                    self.scopes[-1].append({'sym': v, 'offset': self.var_offset})
+                    self.def_var(self.var_offset, reg[x])
             else:
                 print(op)
             i += 1
+        self.scopes.pop()
 
     def gen_text_from_ir(self, ir):
         text = self.find_phdr(".text")
@@ -211,6 +221,31 @@ class Gen:
         sz = self.curr_addr - st
         text.phdr.set_filesz(self, sz, text.addr)
         text.phdr.set_memsz(self, sz, text.addr)
+
+    def def_var(self, offset, reg):
+        self.pop_reg(reg)
+        if reg in arg_regs[:3]:
+            self.buf += b"\x48\x89"
+        elif reg in arg_regs[3:]:
+            self.buf += b"\x4c\x89"
+        byt = offset <= (0xff // 2) + 1
+        match reg:
+            case Reg.rdi:
+                reg_byte = 0x7d
+            case Reg.rsi:
+                reg_byte = 0x75
+            case Reg.rdx | Reg.r10:
+                reg_byte = 0x55
+            case Reg.r8:
+                reg_byte = 0x45
+            case Reg.r9:
+                reg_byte = 0x4d
+        if byt:
+            self.write_u8(reg_byte)
+            self.write_u8(0xff - offset + 1)
+        else:
+            self.write_u8(reg_byte + 64)
+            self.write_u32(0xffffffff - offset + 1)
 
     def mov_reg_to_reg(self, r1, r2):
         if r1 == Reg.rdi and r2 == Reg.rsp:
