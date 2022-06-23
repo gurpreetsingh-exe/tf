@@ -1,9 +1,6 @@
 import linux
 import panic
-
-macro assertion_failed {
-    1 "Assertion failed, " 18 write!
-}
+import mod_assert
 
 func main() {
     // drop

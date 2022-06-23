@@ -1,12 +1,13 @@
 import linux
 import panic
-
-macro assertion_failed {
-    1 "Assertion failed, " 18 write!
-}
+import mod_assert
 
 func:int foo() {
     69 return
+}
+
+macro foo {
+    42
 }
 
 func main() {
@@ -26,6 +27,11 @@ func main() {
     }
 
     foo() 69 != if {
+        assertion_failed!
+        panic!
+    }
+
+    foo! 42 != if {
         assertion_failed!
         panic!
     }
