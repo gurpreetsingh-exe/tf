@@ -184,6 +184,9 @@ class Gen:
                     self.var_offset += 8
                     self.scopes[-1].append({'sym': v, 'offset': self.var_offset})
                     self.def_var(self.var_offset, reg[x])
+            elif op[0] == IRKind.Destruct:
+                for reg in reversed(arg_regs[:int(op[1])]):
+                    self.pop_reg(reg)
             else:
                 print(op)
             i += 1
