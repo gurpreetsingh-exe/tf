@@ -269,6 +269,16 @@ class Gen:
                 self.buf += b"\x5d"
             case Reg.rdi:
                 self.buf += b"\x5f"
+            case Reg.rsi:
+                self.buf += b"\x5e"
+            case Reg.rdx:
+                self.buf += b"\x5a"
+            case Reg.r10:
+                self.buf += b"\x41\x5a"
+            case Reg.r8:
+                self.buf += b"\x41\x58"
+            case Reg.r9:
+                self.buf += b"\x41\x59"
             case _:
                 assert False, f"not implemented in pop_reg(), \"pop {Reg(reg).name}\""
 
