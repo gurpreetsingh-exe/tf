@@ -180,7 +180,7 @@ class Gen:
                     self.buf += b"\x48\x89\x18"
             elif op[0] == IRKind.Let:
                 reg = arg_regs[:len(op[1])]
-                for x, v in enumerate(reg):
+                for x, v in enumerate(op[1]):
                     self.var_offset += 8
                     self.scopes[-1].append({'sym': v, 'offset': self.var_offset})
                     self.def_var(self.var_offset, reg[x])
