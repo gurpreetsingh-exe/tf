@@ -47,7 +47,7 @@ for path in pathlib.Path(test_dir).iterdir():
     proc = subprocess.Popen([target], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     lines = "".join([i.decode('utf-8') for i in proc.stdout.readlines()])
     proc.communicate()
-    if proc.returncode == 101:
+    if proc.returncode != 0:
         state.failed_tests += 1
         print("ERROR: Execution failed")
         with open(logs_file, "a") as fd:
@@ -57,6 +57,8 @@ for path in pathlib.Path(test_dir).iterdir():
     else:
         state.passed_tests += 1
         with open(logs_file, "a") as fd:
+            if proc.returncode == 101:
+                fd.write(f"[THREAD PANIC]\n")
             fd.write(f"== INFO: Output for {target}\n== ")
             fd.write(lines)
             fd.write(f"== INFO: Return code: {proc.returncode}\n\n")
