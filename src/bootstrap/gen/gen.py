@@ -134,6 +134,13 @@ class Gen:
                 else:
                     assert False, "Unreachable in binary_op()"
 
+    def find_var(self, op):
+        size = len(self.scopes)
+        for i in reversed(range(size)):
+            for d in self.scopes[i]:
+                if op[1] == d['sym']:
+                    return d['offset']
+
     def gen_body(self, ir):
         i = 0
         self.scopes.append([])
@@ -145,6 +152,15 @@ class Gen:
                 self.buf += b"\x68"
                 self.label(f"S{op[2]}")
                 self.strings.append(op[1:-1])
+            elif op[0] == IRKind.PushVar:
+                offset = self.find_var(op)
+                byt = offset <= (0xff // 2) + 1
+                if byt:
+                    self.buf += b"\xff\x75"
+                    self.write_u8(0xff - offset + 1)
+                else:
+                    self.buf += b"\xff\xb5"
+                    self.write_u32(0xffffffff - offset + 1)
             elif op[0] == IRKind.Binary:
                 self.binary_op(op)
             elif op[0] == IRKind.Func:
@@ -187,6 +203,9 @@ class Gen:
             elif op[0] == IRKind.Destruct:
                 for reg in reversed(arg_regs[:int(op[1])]):
                     self.pop_reg(reg)
+            elif op[0] in [IRKind.Const, IRKind.Import, IRKind.Macro]:
+                # TODO: resolve these in previous passes
+                pass
             else:
                 assert False, f"{op} is not implemented"
             i += 1
