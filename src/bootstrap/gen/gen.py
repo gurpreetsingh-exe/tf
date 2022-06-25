@@ -151,6 +151,35 @@ class Gen:
                     self.cqo()
                     self.div(Reg.rbx)
                     self.push_reg(Reg.rax)
+                elif op[2] == TypeKind.FLOAT:
+                    assert False, "float math is not implemented"
+                else:
+                    assert False, "Unreachable in binary_op()"
+            case BinaryKind.LT:
+                if op[2] == TypeKind.INT:
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.sub_reg(Reg.rbx, 1)
+                    self.cmp_reg(Reg.rax, Reg.rbx)
+                    self.mov_int_to_reg(Reg.rax, 0)
+                    self.buf += b"\x0f\x9e\xc0"
+                    self.push_reg(Reg.rax)
+                elif op[2] == TypeKind.FLOAT:
+                    assert False, "float math is not implemented"
+                else:
+                    assert False, "Unreachable in binary_op()"
+            case BinaryKind.GT:
+                if op[2] == TypeKind.INT:
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.cmp_reg(Reg.rax, Reg.rbx)
+                    self.mov_int_to_reg(Reg.rax, 0)
+                    self.buf += b"\x0f\x9f\xc0"
+                    self.push_reg(Reg.rax)
+                elif op[2] == TypeKind.FLOAT:
+                    assert False, "float math is not implemented"
+                else:
+                    assert False, "Unreachable in binary_op()"
             case BinaryKind.MOD:
                 self.pop_reg(Reg.rbx)
                 self.pop_reg(Reg.rax)
@@ -549,10 +578,12 @@ class Gen:
     def sub_reg(self, reg, val):
         byt = val <= 0xff // 2
         val = val & (2**32) // 2 - 1
+        mid = b"\x83" if byt else b"\x81"
         match reg:
             case Reg.rsp:
-                mid = b"\x83" if byt else b"\x81"
                 self.buf += b"\x48" + mid + b"\xec"
+            case Reg.rbx:
+                self.buf += b"\x48" + mid + b"\xeb"
         if byt:
             self.buf.append(val)
         else:
