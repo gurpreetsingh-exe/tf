@@ -211,6 +211,15 @@ class Gen:
                 elif op[1] == IntrinsicKind.MEM:
                     self.buf += b"\x68"
                     self.label("mem", 0)
+                elif op[1] == IntrinsicKind.READ8:
+                    self.pop_reg(Reg.rax)
+                    self.mov_int_to_reg(Reg.rbx, 0)
+                    self.buf += b"\x8a\x18"
+                    self.push_reg(Reg.rax)
+                elif op[1] == IntrinsicKind.WRITE8:
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.buf += b"\x88\x18"
                 elif op[1] == IntrinsicKind.READ64:
                     self.pop_reg(Reg.rax)
                     self.mov_int_to_reg(Reg.rbx, 0)
