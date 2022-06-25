@@ -1,5 +1,6 @@
 from enum import Enum, auto
 import os
+import struct
 from .elf import *
 from Parser import *
 
@@ -15,6 +16,9 @@ class Reg(Enum):
     r8  = auto()
     r9  = auto()
     r10 = auto()
+
+    xmm0 = auto()
+    xmm1 = auto()
 
 arg_regs = [Reg.rdi, Reg.rsi, Reg.rdx, Reg.r10, Reg.r8, Reg.r9]
 
@@ -35,6 +39,7 @@ class Gen:
 
         self.var_offset = 0
         self.funcs = {}
+        self.floats = []
         self.locs = []
 
     def gen_exec(self, ir):
@@ -270,6 +275,12 @@ class Gen:
             op = ir[i]
             if op[0] == IRKind.PushInt:
                 self.push_int(int(op[1]))
+            elif op[0] == IRKind.PushFloat:
+                self.mov_float_to_reg(Reg.xmm0, f"flt{op[2]}")
+                # movq rax, xmm0
+                self.buf += b"\x66\x48\x0f\x7e\xc0"
+                self.push_reg(Reg.rax)
+                self.floats.append(op[1:-1])
             elif op[0] == IRKind.PushStr:
                 self.buf += b"\x68"
                 if addr := self.find_str(op[1]):
@@ -621,6 +632,15 @@ class Gen:
         else:
             self.write_u32(val)
 
+    def mov_float_to_reg(self, reg, label):
+        self.buf += b"\xf2\x0f\x10"
+        match reg:
+            case Reg.xmm0:
+                self.buf += b"\x04\x25"
+            case Reg.xmm1:
+                self.buf += b"\x0c\x25"
+        self.label(label, 0)
+
     def push_int(self, val):
         byt = val <= 0xff // 2
         if byt:
@@ -740,6 +760,9 @@ class Gen:
             self.new_sym(f"__here{x}", 2)
             self.write_u64(loc[0])
             self.write_u64(loc[1])
+        for f in self.floats:
+            self.new_sym(f"flt{f[1]}", 2)
+            self.buf += struct.pack("d", float(f[0]))
         sz = self.curr_addr - st
         data.phdr.set_filesz(self, sz, data.addr)
         data.phdr.set_memsz(self, sz, data.addr)
