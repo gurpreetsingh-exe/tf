@@ -141,6 +141,11 @@ class Gen:
                 if op[1] == d['sym']:
                     return d['offset']
 
+    def find_str(self, str_to_find):
+        for s, str_addr in self.strings:
+            if str_to_find == s:
+                return str_addr
+
     def gen_body(self, ir):
         i = 0
         self.scopes.append([])
@@ -150,8 +155,11 @@ class Gen:
                 self.push_int(int(op[1]))
             elif op[0] == IRKind.PushStr:
                 self.buf += b"\x68"
-                self.label(f"S{op[2]}")
-                self.strings.append(op[1:-1])
+                if addr := self.find_str(op[1]):
+                    self.label(f"S{addr}", 0)
+                else:
+                    self.label(f"S{op[2]}", 0)
+                    self.strings.append(op[1:-1])
             elif op[0] == IRKind.PushVar:
                 offset = self.find_var(op)
                 byt = offset <= (0xff // 2) + 1
@@ -184,7 +192,7 @@ class Gen:
                     self.call("print")
                 elif op[1] == IntrinsicKind.MEM:
                     self.buf += b"\x68"
-                    self.label("mem")
+                    self.label("mem", 0)
                 elif op[1] == IntrinsicKind.READ64:
                     self.pop_reg(Reg.rax)
                     self.mov_int_to_reg(Reg.rbx, 0)
@@ -402,11 +410,11 @@ class Gen:
         self.rela.append(__rela)
         self.write_u32(0)
 
-    def label(self, name):
+    def label(self, name, typ):
         __rela = lambda x: None
         __rela.name = name
         __rela.addr = self.curr_addr
-        __rela.typ = 0
+        __rela.typ = typ
         self.rela.append(__rela)
         self.write_u32(0)
 
