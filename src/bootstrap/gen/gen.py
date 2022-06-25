@@ -275,6 +275,18 @@ class Gen:
                 self.call(op[1])
                 if self.funcs[op[1]][2]:
                     self.push_reg(Reg.rax)
+            elif op[0] == IRKind.If:
+                self.pop_reg(Reg.rax)
+                self.cmp(Reg.rax, 0)
+                self.je(f"ADDR{op[2]}")
+                self.gen_body(op[1])
+                if op[3]:
+                    self.jmp(f"ADDR{op[4]}")
+                    self.new_sym(f"ADDR{op[2]}", 1)
+                    self.gen_body(op[3])
+                    self.new_sym(f"ADDR{op[4]}", 1)
+                else:
+                    self.new_sym(f"ADDR{op[2]}", 1)
             elif op[0] == IRKind.Let:
                 reg = arg_regs[:len(op[1])]
                 for x, v in enumerate(op[1]):
@@ -330,6 +342,32 @@ class Gen:
         text.phdr.set_filesz(self, sz, text.addr)
         text.phdr.set_memsz(self, sz, text.addr)
 
+    def cmp(self, reg, val):
+        byt = val <= 0xff // 2
+        match reg:
+            case Reg.rax:
+                self.buf += b"\x48\x83\xf8" if byt else b"\x48\x3d"
+            case _:
+                assert False, f"Not implemented in cmp(), \"cmp {Reg(reg).name}, {val}\""
+
+        if byt:
+            self.write_u8(val)
+        else:
+            self.write_u32(val)
+
+    def cmp_reg(self, r1, r2):
+        if r1 == Reg.rax and r2 == Reg.rbx:
+            self.buf += b"\x48\x39\xd8"
+        else:
+            assert False, f"not implemented in cmp_reg(), \"cmp {Reg(r1).name}, {Reg(r2).name}\""
+
+    def je(self, label):
+        self.buf += b"\x0f\x84"
+        self.label(label, 1)
+
+    def jmp(self, label):
+        self.buf += b"\xe9"
+        self.label(label, 1)
 
     def lea_var(self, offset):
         if offset <= (0xff // 2) + 1:
