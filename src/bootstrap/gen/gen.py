@@ -192,6 +192,18 @@ class Gen:
                 if op[1] == IntrinsicKind.PRINT:
                     self.pop_reg(Reg.rdi)
                     self.call("print")
+                elif op[1] == IntrinsicKind.DROP:
+                    self.buf += b"\x48\x8d\x64\x24\x08"
+                elif op[1] == IntrinsicKind.SWAP:
+                    self.pop_reg(Reg.rax)
+                    # TODO: make this a `dup` method
+                    self.buf += b"\xff\x34\x24"
+                    # mov [rsp + 8], rax
+                    self.buf += b"\x48\x89\x44\x24\x08"
+                elif op[1] == IntrinsicKind.DUP:
+                    self.buf += b"\xff\x34\x24"
+                elif op[1] == IntrinsicKind.OVER:
+                    self.buf += b"\xff\x74\x24\x08"
                 elif op[1] == IntrinsicKind.MEM:
                     self.buf += b"\x68"
                     self.label("mem", 0)
