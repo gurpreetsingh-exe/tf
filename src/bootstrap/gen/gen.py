@@ -144,6 +144,16 @@ class Gen:
                     assert False, "float math is not implemented"
                 else:
                     assert False, "Unreachable in binary_op()"
+            case BinaryKind.MUL:
+                if op[2] == TypeKind.INT:
+                    self.pop_reg(Reg.rax)
+                    self.pop_reg(Reg.rbx)
+                    self.mul(Reg.rax, Reg.rbx)
+                    self.push_reg(Reg.rax)
+                elif op[2] == TypeKind.FLOAT:
+                    assert False, "float math is not implemented"
+                else:
+                    assert False, "Unreachable in binary_op()"
             case BinaryKind.DIV:
                 if op[2] == TypeKind.INT:
                     self.pop_reg(Reg.rbx)
@@ -240,16 +250,6 @@ class Gen:
                 self.push_reg(Reg.rax)
             case _:
                 assert False, f"{op[1]} not implemented in binary_op()"
-
-    def test(self, reg):
-        self.buf += b"\x48\x85"
-        match reg:
-            case Reg.rax:
-                self.buf += b"\xc0"
-            case Reg.rbx:
-                self.buf += b"\xdb"
-            case _:
-                assert False, "not implemented in test()"
 
     def find_var(self, op):
         size = len(self.scopes)
@@ -461,6 +461,16 @@ class Gen:
         else:
             assert False, f"not implemented in cmp_reg(), \"cmp {Reg(r1).name}, {Reg(r2).name}\""
 
+    def test(self, reg):
+        self.buf += b"\x48\x85"
+        match reg:
+            case Reg.rax:
+                self.buf += b"\xc0"
+            case Reg.rbx:
+                self.buf += b"\xdb"
+            case _:
+                assert False, "not implemented in test()"
+
     def je(self, label):
         self.buf += b"\x0f\x84"
         self.label(label, 1)
@@ -531,6 +541,12 @@ class Gen:
                 self.buf += b"\xd2"
             case _:
                 assert False, "not implemented"
+
+    def mul(self, r1, r2):
+        if r1 == Reg.rax and r2 == Reg.rbx:
+            self.buf += b"\x48\x0f\xaf\xc3"
+        else:
+            assert False, "not implemented in mul()"
 
     def cqo(self):
         self.buf += b"\x48\x99"
