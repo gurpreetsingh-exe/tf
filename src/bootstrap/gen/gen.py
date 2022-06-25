@@ -182,6 +182,30 @@ class Gen:
                     assert False, "float math is not implemented"
                 else:
                     assert False, "Unreachable in binary_op()"
+            case BinaryKind.AND:
+                self.pop_reg(Reg.rax)
+                self.pop_reg(Reg.rbx)
+                self.test(Reg.rax)
+                # setne al
+                self.buf += b"\x0f\x95\xc0"
+                self.test(Reg.rbx)
+                # setne bl
+                self.buf += b"\x0f\x95\xc3"
+                # and rax, rbx
+                self.buf += b"\x48\x21\xd8"
+                self.push_reg(Reg.rax)
+            case BinaryKind.OR:
+                self.pop_reg(Reg.rax)
+                self.pop_reg(Reg.rbx)
+                self.test(Reg.rax)
+                # setne al
+                self.buf += b"\x0f\x95\xc0"
+                self.test(Reg.rbx)
+                # setne bl
+                self.buf += b"\x0f\x95\xc3"
+                # or rax, rbx
+                self.buf += b"\x48\x09\xd8"
+                self.push_reg(Reg.rax)
             case BinaryKind.MOD:
                 self.pop_reg(Reg.rbx)
                 self.pop_reg(Reg.rax)
@@ -206,6 +230,16 @@ class Gen:
                 self.push_reg(Reg.rax)
             case _:
                 assert False, f"{op[1]} not implemented in binary_op()"
+
+    def test(self, reg):
+        self.buf += b"\x48\x85"
+        match reg:
+            case Reg.rax:
+                self.buf += b"\xc0"
+            case Reg.rbx:
+                self.buf += b"\xdb"
+            case _:
+                assert False, "not implemented in test()"
 
     def find_var(self, op):
         size = len(self.scopes)
