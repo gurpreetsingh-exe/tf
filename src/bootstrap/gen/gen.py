@@ -288,6 +288,13 @@ class Gen:
                 else:
                     self.label(f"S{op[2]}", 0)
                     self.strings.append(op[1:-1])
+            elif op[0] == IRKind.PushBool:
+                val = 1 if op[1] == 'true' else 0
+                self.xor(Reg.rax)
+                # mov BYTE al, val
+                self.buf += b"\xb0"
+                self.write_u8(val)
+                self.push_reg(Reg.rax)
             elif op[0] == IRKind.PushVar:
                 offset = self.find_var(op)
                 byt = offset <= (0xff // 2) + 1
