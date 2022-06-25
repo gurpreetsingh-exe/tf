@@ -624,7 +624,7 @@ class Gen:
         st = self.curr_addr
         for s in self.strings:
             self.new_sym(f"S{s[1]}", 2)
-            self.write(s[0] + b"\x00")
+            self.write(bytes(s[0].decode('unicode_escape'), 'utf-8') + b"\x00")
         for x, loc in enumerate(self.locs):
             self.new_sym(f"__here{x}", 2)
             self.write_u64(loc[0])
