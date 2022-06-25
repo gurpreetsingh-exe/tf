@@ -35,6 +35,7 @@ class Gen:
 
         self.var_offset = 0
         self.funcs = {}
+        self.locs = []
 
     def gen_exec(self, ir):
         self.ehdr.emit(self)
@@ -265,6 +266,12 @@ class Gen:
                     self.pop_reg(Reg.rax)
                     self.syscall()
                     self.push_reg(Reg.rax)
+                elif op[1] == IntrinsicKind.HERE:
+                    self.buf += b"\x68"
+                    self.label(f"__here{len(self.locs)}", 0)
+                    self.locs.append(op[-1])
+                else:
+                    assert False, f"{op[1]} is not implemented"
             elif op[0] == IRKind.Call:
                 assert self.funcs[op[1]][0] == IRKind.FuncSign
                 signature = self.funcs[op[1]][1]
@@ -618,6 +625,10 @@ class Gen:
         for s in self.strings:
             self.new_sym(f"S{s[1]}", 2)
             self.write(s[0] + b"\x00")
+        for x, loc in enumerate(self.locs):
+            self.new_sym(f"__here{x}", 2)
+            self.write_u64(loc[0])
+            self.write_u64(loc[1])
         sz = self.curr_addr - st
         data.phdr.set_filesz(self, sz, data.addr)
         data.phdr.set_memsz(self, sz, data.addr)
