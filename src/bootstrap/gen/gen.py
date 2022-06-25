@@ -182,6 +182,16 @@ class Gen:
                     assert False, "float math is not implemented"
                 else:
                     assert False, "Unreachable in binary_op()"
+            case BinaryKind.SHL:
+                self.pop_reg(Reg.rcx)
+                self.pop_reg(Reg.rax)
+                self.buf += b"\x48\xd3\xe0"
+                self.push_reg(Reg.rax)
+            case BinaryKind.SHR:
+                self.pop_reg(Reg.rcx)
+                self.pop_reg(Reg.rax)
+                self.buf += b"\x48\xd3\xf8"
+                self.push_reg(Reg.rax)
             case BinaryKind.AND:
                 self.pop_reg(Reg.rax)
                 self.pop_reg(Reg.rbx)
@@ -541,6 +551,8 @@ class Gen:
                 self.buf += b"\x58"
             case Reg.rbx:
                 self.buf += b"\x5b"
+            case Reg.rcx:
+                self.buf += b"\x59"
             case Reg.rbp:
                 self.buf += b"\x5d"
             case Reg.rdi:
