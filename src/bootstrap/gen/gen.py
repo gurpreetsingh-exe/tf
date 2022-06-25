@@ -213,6 +213,11 @@ class Gen:
             elif op[0] == IRKind.Destruct:
                 for reg in reversed(arg_regs[:int(op[1])]):
                     self.pop_reg(reg)
+            elif op[0] == IRKind.Return:
+                self.pop_reg(Reg.rax)
+                self.add_reg(Reg.rsp, int(op[1]) * 8)
+                self.pop_reg(Reg.rbp)
+                self.ret()
             elif op[0] in [IRKind.Const, IRKind.Import, IRKind.Macro]:
                 # TODO: resolve these in previous passes
                 pass
