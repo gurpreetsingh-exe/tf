@@ -287,6 +287,15 @@ class Gen:
                     self.new_sym(f"ADDR{op[4]}", 1)
                 else:
                     self.new_sym(f"ADDR{op[2]}", 1)
+            elif op[0] == IRKind.While:
+                self.new_sym(f"ADDR{op[1]}", 1)
+            elif op[0] == IRKind.Do:
+                self.pop_reg(Reg.rax)
+                self.cmp(Reg.rax, 0)
+                self.je(f"ADDR{op[3]}")
+                self.gen_body(op[1])
+                self.jmp(f"ADDR{op[2]}")
+                self.new_sym(f"ADDR{op[3]}", 1)
             elif op[0] == IRKind.Let:
                 reg = arg_regs[:len(op[1])]
                 for x, v in enumerate(op[1]):
