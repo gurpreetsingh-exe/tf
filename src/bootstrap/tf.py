@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import subprocess
 from dataclasses import dataclass
+from gen.gen import Gen
 
 from token_types import *
 from Token import *
@@ -15,11 +16,17 @@ from Parser import BinaryKind, IRKind, Parser
 offset = 0
 arg_regs = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
 
+class Backend(Enum):
+    Nasm = auto()
+    Native = auto()
+
 @dataclass
 class State:
     compiler_src_path = Path(__file__).parent.parent
     libpath = os.path.join(compiler_src_path, "library")
     root = None # root is known after src file is provided to the compiler for compilation
+    filepath = ""
+    backend = Backend.Nasm
 
 def generate_binary_op(op):
     match op[1]:
@@ -883,18 +890,23 @@ def run_command(args):
         exit(proc.returncode)
 
 def compile_program(ir, program_file):
-    buffer = generate_x86_64_nasm_linux(ir)
     out_filename = os.path.join(program_file.parent, program_file.stem)
 
-    with open(out_filename + ".asm", "w") as out:
-        out.write(buffer)
-
-    run_command(["nasm", "-felf64", out_filename + ".asm"])
-    run_command(["ld", "-o", out_filename, out_filename + ".o"])
+    if State.backend == Backend.Nasm:
+        buffer = generate_x86_64_nasm_linux(ir)
+        with open(out_filename + ".asm", "w") as out:
+            out.write(buffer)
+        # run_command(["nasm", "-felf64", "-g", "-F", "dwarf", out_filename + ".asm"])
+        run_command(["nasm", "-felf64", out_filename + ".asm"])
+        run_command(["ld", "-o", out_filename, out_filename + ".o"])
+    elif State.backend == Backend.Native:
+        gen = Gen(out_filename)
+        gen.gen_exec(ir)
 
     return out_filename
 
-def execute(flag, program_file):
+def execute():
+    program_file = State.filepath
     filepath = Path(program_file).absolute()
     if not filepath.exists():
         print(f"tf: `{program_file}` doesn't exist")
@@ -905,14 +917,29 @@ def execute(flag, program_file):
     parser = Parser(filepath, tokens)
     ir = list(parser.parse())
     ir = ir_passes(ir, parser.addr)
+    compile_program(ir, filepath)
 
-    if flag == "-r":
-        exec_name = compile_program(ir, filepath)
-        run_command(["./" + exec_name])
-    elif flag == "-c":
-        compile_program(ir, filepath)
+def parse_flag(flag, argv):
+    match flag:
+        case "-c":
+            filepath, argv = lsplit(argv)
+            State.filepath = filepath
+        case "-be":
+            be, argv = lsplit(argv)
+            if be == "nasm":
+                State.backend = Backend.Nasm
+            elif be == "native":
+                State.backend = Backend.Native
+        case _:
+            print(f"Unknown flag \"{flag}\"")
+            exit(1)
+    return argv
+
+def lsplit(l):
+    if l:
+        return l[0], l[1:]
     else:
-        print(f"Unknown flag {flag}")
+        print("not enough arguments")
         exit(1)
 
 def main(argv):
@@ -922,8 +949,11 @@ def main(argv):
         sys.stdout.write(f"{exec_name}: not enough arguments\n")
         exit(1)
 
-    file_path, exec_flag = argv[1], argv[0]
-    execute(exec_flag, file_path)
+    while argv:
+        flag, argv = lsplit(argv)
+        argv = parse_flag(flag, argv)
+
+    execute()
 
 if __name__ == "__main__":
     main(sys.argv)
