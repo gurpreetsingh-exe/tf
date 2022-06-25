@@ -346,6 +346,26 @@ class Gen:
                 elif op[1] == IntrinsicKind.MEM:
                     self.buf += b"\x68"
                     self.label("mem", 0)
+                elif op[1] == IntrinsicKind.CAST_INT:
+                    if op[2] == TypeKind.FLOAT:
+                        self.pop_reg(Reg.rax)
+                        # movq xmm0, rax
+                        self.buf += b"\x66\x48\x0f\x6e\xc0"
+                        # cvttsd2si rax, xmm0
+                        self.buf += b"\xf2\x48\x0f\x2c\xc0"
+                        self.push_reg(Reg.rax)
+                elif op[1] == IntrinsicKind.CAST_STR:
+                    pass
+                elif op[1] == IntrinsicKind.CAST_FLOAT:
+                    if op[2] == TypeKind.INT:
+                        self.pop_reg(Reg.rax)
+                        # pxor xmm0, xmm0
+                        self.buf += b"\x66\x0f\xef\xc0"
+                        # cvtsi2sd xmm0, rax
+                        self.buf += b"\xf2\x48\x0f\x2a\xc0"
+                        # movq rax, xmm0
+                        self.buf += b"\x66\x48\x0f\x7e\xc0"
+                        self.push_reg(Reg.rax)
                 elif op[1] == IntrinsicKind.READ8:
                     self.pop_reg(Reg.rax)
                     self.mov_int_to_reg(Reg.rbx, 0)
