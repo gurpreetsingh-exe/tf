@@ -674,8 +674,12 @@ class Gen:
             self.buf += b"\x6a"
             self.write_u8(val)
         else:
-            self.buf += b"\x68"
-            self.write_u32(val)
+            if val > 0xffffffff // 2:
+                self.mov_int_to_reg(Reg.rax, val)
+                self.push_reg(Reg.rax)
+            else:
+                self.buf += b"\x68"
+                self.write_u32(val)
 
     def push_reg(self, reg):
         match reg:
