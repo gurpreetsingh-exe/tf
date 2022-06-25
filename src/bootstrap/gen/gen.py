@@ -265,6 +265,16 @@ class Gen:
                     self.pop_reg(Reg.rax)
                     self.syscall()
                     self.push_reg(Reg.rax)
+            elif op[0] == IRKind.Call:
+                assert self.funcs[op[1]][0] == IRKind.FuncSign
+                signature = self.funcs[op[1]][1]
+                nargs = len(signature)
+                regs = arg_regs[:nargs]
+                for x in regs:
+                    self.pop_reg(x)
+                self.call(op[1])
+                if self.funcs[op[1]][2]:
+                    self.push_reg(Reg.rax)
             elif op[0] == IRKind.Let:
                 reg = arg_regs[:len(op[1])]
                 for x, v in enumerate(op[1]):
