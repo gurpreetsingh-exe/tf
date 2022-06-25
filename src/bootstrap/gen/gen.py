@@ -127,6 +127,46 @@ class Gen:
             name += len(sym.name) + 1
         self.symbol_table = sym_tab
 
+    def mov_sse(self, r1, r2):
+        if r1 == Reg.xmm0 and r2 == Reg.rax:
+            self.buf += b"\x66\x48\x0f\x6e\xc0"
+        elif r1 == Reg.xmm1 and r2 == Reg.rbx:
+            self.buf += b"\x66\x48\x0f\x6e\xcb"
+        elif r1 == Reg.rax and r2 == Reg.xmm0:
+            self.buf += b"\x66\x48\x0f\x7e\xc0"
+        else:
+            assert False, "not implemented in mov_sse()"
+
+    def add_sse(self, r1, r2):
+        if r1 == Reg.xmm0 and r2 == Reg.xmm1:
+            self.buf += b"\xf2\x0f\x58\xc1"
+        else:
+            assert False, "not implemented in add_sse()"
+
+    def sub_sse(self, r1, r2):
+        if r1 == Reg.xmm0 and r2 == Reg.xmm1:
+            self.buf += b"\xf2\x0f\x5c\xc1"
+        else:
+            assert False, "not implemented in add_sse()"
+
+    def mul_sse(self, r1, r2):
+        if r1 == Reg.xmm0 and r2 == Reg.xmm1:
+            self.buf += b"\xf2\x0f\x59\xc1"
+        else:
+            assert False, "not implemented in add_sse()"
+
+    def div_sse(self, r1, r2):
+        if r1 == Reg.xmm0 and r2 == Reg.xmm1:
+            self.buf += b"\xf2\x0f\x5e\xc1"
+        else:
+            assert False, "not implemented in add_sse()"
+
+    def com_sse(self, r1, r2):
+        if r1 == Reg.xmm0 and r2 == Reg.xmm1:
+            self.buf += b"\x66\x0f\x2f\xc1"
+        else:
+            assert False, "not implemented in add_sse()"
+
     def binary_op(self, op):
         match op[1]:
             case BinaryKind.ADD:
@@ -136,7 +176,13 @@ class Gen:
                     self.add_reg_to_reg(Reg.rax, Reg.rbx)
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
-                    assert False, "float math is not implemented"
+                    self.pop_reg(Reg.rax)
+                    self.pop_reg(Reg.rbx)
+                    self.mov_sse(Reg.xmm0, Reg.rax)
+                    self.mov_sse(Reg.xmm1, Reg.rbx)
+                    self.add_sse(Reg.xmm0, Reg.xmm1)
+                    self.mov_sse(Reg.rax, Reg.xmm0)
+                    self.push_reg(Reg.rax)
                 else:
                     assert False, "Unreachable in binary_op()"
             case BinaryKind.SUB:
@@ -146,7 +192,13 @@ class Gen:
                     self.sub_reg_from_reg(Reg.rax, Reg.rbx)
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
-                    assert False, "float math is not implemented"
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.mov_sse(Reg.xmm0, Reg.rax)
+                    self.mov_sse(Reg.xmm1, Reg.rbx)
+                    self.sub_sse(Reg.xmm0, Reg.xmm1)
+                    self.mov_sse(Reg.rax, Reg.xmm0)
+                    self.push_reg(Reg.rax)
                 else:
                     assert False, "Unreachable in binary_op()"
             case BinaryKind.MUL:
@@ -156,7 +208,13 @@ class Gen:
                     self.mul(Reg.rax, Reg.rbx)
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
-                    assert False, "float math is not implemented"
+                    self.pop_reg(Reg.rax)
+                    self.pop_reg(Reg.rbx)
+                    self.mov_sse(Reg.xmm0, Reg.rax)
+                    self.mov_sse(Reg.xmm1, Reg.rbx)
+                    self.mul_sse(Reg.xmm0, Reg.xmm1)
+                    self.mov_sse(Reg.rax, Reg.xmm0)
+                    self.push_reg(Reg.rax)
                 else:
                     assert False, "Unreachable in binary_op()"
             case BinaryKind.DIV:
@@ -167,7 +225,13 @@ class Gen:
                     self.div(Reg.rbx)
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
-                    assert False, "float math is not implemented"
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.mov_sse(Reg.xmm0, Reg.rax)
+                    self.mov_sse(Reg.xmm1, Reg.rbx)
+                    self.div_sse(Reg.xmm0, Reg.xmm1)
+                    self.mov_sse(Reg.rax, Reg.xmm0)
+                    self.push_reg(Reg.rax)
                 else:
                     assert False, "Unreachable in binary_op()"
             case BinaryKind.LT:
@@ -181,7 +245,15 @@ class Gen:
                     self.buf += b"\x0f\x9e\xc0"
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
-                    assert False, "float math is not implemented"
+                    self.pop_reg(Reg.rax)
+                    self.pop_reg(Reg.rbx)
+                    self.mov_sse(Reg.xmm0, Reg.rax)
+                    self.mov_sse(Reg.xmm1, Reg.rbx)
+                    self.com_sse(Reg.xmm0, Reg.xmm1)
+                    self.mov_int_to_reg(Reg.rax, 0)
+                    # seta al
+                    self.buf += b"\x0f\x97\xc0"
+                    self.push_reg(Reg.rax)
                 else:
                     assert False, "Unreachable in binary_op()"
             case BinaryKind.GT:
@@ -194,7 +266,15 @@ class Gen:
                     self.buf += b"\x0f\x9f\xc0"
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
-                    assert False, "float math is not implemented"
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.mov_sse(Reg.xmm0, Reg.rax)
+                    self.mov_sse(Reg.xmm1, Reg.rbx)
+                    self.com_sse(Reg.xmm0, Reg.xmm1)
+                    self.mov_int_to_reg(Reg.rax, 0)
+                    # seta al
+                    self.buf += b"\x0f\x97\xc0"
+                    self.push_reg(Reg.rax)
                 else:
                     assert False, "Unreachable in binary_op()"
             case BinaryKind.SHL:
