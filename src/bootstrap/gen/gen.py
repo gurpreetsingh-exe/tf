@@ -325,6 +325,13 @@ class Gen:
                     self.buf += b"\xff\x34\x24"
                 elif op[1] == IntrinsicKind.OVER:
                     self.buf += b"\xff\x74\x24\x08"
+                elif op[1] == IntrinsicKind.ROT:
+                    self.pop_reg(Reg.rax)
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rcx)
+                    self.push_reg(Reg.rbx)
+                    self.push_reg(Reg.rax)
+                    self.push_reg(Reg.rcx)
                 elif op[1] == IntrinsicKind.MEM:
                     self.buf += b"\x68"
                     self.label("mem", 0)
