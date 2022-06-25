@@ -133,6 +133,38 @@ class Gen:
                     assert False, "float math is not implemented"
                 else:
                     assert False, "Unreachable in binary_op()"
+            case BinaryKind.SUB:
+                if op[2] == TypeKind.INT:
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.sub_reg_from_reg(Reg.rax, Reg.rbx)
+                    self.push_reg(Reg.rax)
+                elif op[2] == TypeKind.FLOAT:
+                    assert False, "float math is not implemented"
+                else:
+                    assert False, "Unreachable in binary_op()"
+            case BinaryKind.DIV:
+                if op[2] == TypeKind.INT:
+                    self.pop_reg(Reg.rbx)
+                    self.pop_reg(Reg.rax)
+                    self.cqo()
+                    self.div(Reg.rbx)
+                    self.push_reg(Reg.rax)
+            case BinaryKind.MOD:
+                self.pop_reg(Reg.rbx)
+                self.pop_reg(Reg.rax)
+                self.xor(Reg.rdx)
+                self.div(Reg.rbx)
+                self.push_reg(Reg.rdx)
+            case BinaryKind.NOTEQ:
+                self.pop_reg(Reg.rax)
+                self.pop_reg(Reg.rbx)
+                self.cmp_reg(Reg.rax, Reg.rbx)
+                self.mov_int_to_reg(Reg.rax, 0)
+                self.buf += b"\x0f\x95\xc0"
+                self.push_reg(Reg.rax)
+            case _:
+                assert False, f"{op[1]} not implemented in binary_op()"
 
     def find_var(self, op):
         size = len(self.scopes)
@@ -329,6 +361,37 @@ class Gen:
     def add_reg_to_reg(self, r1, r2):
         if r1 == Reg.rax and r2 == Reg.rbx:
             self.buf += b"\x48\x01\xd8"
+
+    def sub_reg_from_reg(self, r1, r2):
+        if r1 == Reg.rax and r2 == Reg.rbx:
+            self.buf += b"\x48\x29\xd8"
+
+    def xor(self, reg):
+        self.buf += b"\x48\x31"
+        match reg:
+            case Reg.rax:
+                self.buf += b"\xc0"
+            case Reg.rbx:
+                self.buf += b"\xdb"
+            case Reg.rcx:
+                self.buf += b"\xc9"
+            case Reg.rdx:
+                self.buf += b"\xd2"
+            case _:
+                assert False, "not implemented"
+
+    def cqo(self):
+        self.buf += b"\x48\x99"
+
+    def div(self, reg):
+        self.buf += b"\x48\xf7"
+        match reg:
+            case Reg.rax:
+                self.buf += b"\xf8"
+            case Reg.rbx:
+                self.buf += b"\xfb"
+            case _:
+                assert False, f"Not implemented in div(), `div {Reg(reg).name}`"
 
     def pop_reg(self, reg):
         match reg:
