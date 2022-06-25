@@ -162,6 +162,7 @@ class Gen:
                     self.sub_reg(Reg.rbx, 1)
                     self.cmp_reg(Reg.rax, Reg.rbx)
                     self.mov_int_to_reg(Reg.rax, 0)
+                    # setle al
                     self.buf += b"\x0f\x9e\xc0"
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
@@ -174,6 +175,7 @@ class Gen:
                     self.pop_reg(Reg.rax)
                     self.cmp_reg(Reg.rax, Reg.rbx)
                     self.mov_int_to_reg(Reg.rax, 0)
+                    # setg al
                     self.buf += b"\x0f\x9f\xc0"
                     self.push_reg(Reg.rax)
                 elif op[2] == TypeKind.FLOAT:
@@ -186,11 +188,20 @@ class Gen:
                 self.xor(Reg.rdx)
                 self.div(Reg.rbx)
                 self.push_reg(Reg.rdx)
+            case BinaryKind.EQ:
+                self.pop_reg(Reg.rax)
+                self.pop_reg(Reg.rbx)
+                self.cmp_reg(Reg.rax, Reg.rbx)
+                self.mov_int_to_reg(Reg.rax, 0)
+                # sete al
+                self.buf += b"\x0f\x94\xc0"
+                self.push_reg(Reg.rax)
             case BinaryKind.NOTEQ:
                 self.pop_reg(Reg.rax)
                 self.pop_reg(Reg.rbx)
                 self.cmp_reg(Reg.rax, Reg.rbx)
                 self.mov_int_to_reg(Reg.rax, 0)
+                # setne al
                 self.buf += b"\x0f\x95\xc0"
                 self.push_reg(Reg.rax)
             case _:
