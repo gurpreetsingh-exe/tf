@@ -261,6 +261,10 @@ class Gen:
                     self.pop_reg(Reg.rbx)
                     self.pop_reg(Reg.rax)
                     self.buf += b"\x48\x89\x18"
+                elif op[1] == IntrinsicKind.SYSCALL:
+                    self.pop_reg(Reg.rax)
+                    self.syscall()
+                    self.push_reg(Reg.rax)
             elif op[0] == IRKind.Let:
                 reg = arg_regs[:len(op[1])]
                 for x, v in enumerate(op[1]):
