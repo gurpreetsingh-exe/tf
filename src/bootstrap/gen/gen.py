@@ -34,7 +34,7 @@ class Gen:
         self.scopes = []
 
         self.var_offset = 0
-        self.data = {}
+        self.funcs = {}
 
     def gen_exec(self, ir):
         self.ehdr.emit(self)
@@ -183,9 +183,11 @@ class Gen:
                 for reg in regs:
                     self.push_reg(reg)
                 self.gen_body(op[3])
-                self.add_reg(Reg.rsp, local_var_count * 8)
-                self.pop_reg(Reg.rbp)
-                self.ret()
+                self.funcs[op[1]] = op[2]
+                if not op[2][2]:
+                    self.add_reg(Reg.rsp, local_var_count * 8)
+                    self.pop_reg(Reg.rbp)
+                    self.ret()
             elif op[0] == IRKind.Intrinsic:
                 if op[1] == IntrinsicKind.PRINT:
                     self.pop_reg(Reg.rdi)
