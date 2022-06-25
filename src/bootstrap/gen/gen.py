@@ -169,6 +169,10 @@ class Gen:
                 else:
                     self.buf += b"\xff\xb5"
                     self.write_u32(0xffffffff - offset + 1)
+            elif op[0] == IRKind.PushAddr:
+                offset = self.find_var(op)
+                self.lea_var(offset)
+                self.push_reg(Reg.rax)
             elif op[0] == IRKind.Binary:
                 self.binary_op(op)
             elif op[0] == IRKind.Func:
@@ -270,6 +274,15 @@ class Gen:
         sz = self.curr_addr - st
         text.phdr.set_filesz(self, sz, text.addr)
         text.phdr.set_memsz(self, sz, text.addr)
+
+
+    def lea_var(self, offset):
+        if offset <= (0xff // 2) + 1:
+            self.buf += b"\x48\x8d\x45"
+            self.write_u8(0xff - offset + 1)
+        else:
+            self.buf += b"\x48\x8d\x85"
+            self.write_u32(0xffffffff - offset + 1)
 
     def def_var(self, offset, reg):
         self.pop_reg(reg)
