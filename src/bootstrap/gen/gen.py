@@ -368,16 +368,16 @@ class Gen:
                         self.push_reg(Reg.rax)
                 elif op[1] == IntrinsicKind.READ8:
                     self.pop_reg(Reg.rax)
-                    self.mov_int_to_reg(Reg.rbx, 0)
+                    self.xor(Reg.rbx)
                     self.buf += b"\x8a\x18"
-                    self.push_reg(Reg.rax)
+                    self.push_reg(Reg.rbx)
                 elif op[1] == IntrinsicKind.WRITE8:
                     self.pop_reg(Reg.rbx)
                     self.pop_reg(Reg.rax)
                     self.buf += b"\x88\x18"
                 elif op[1] == IntrinsicKind.READ64:
                     self.pop_reg(Reg.rax)
-                    self.mov_int_to_reg(Reg.rbx, 0)
+                    self.xor(Reg.rbx)
                     self.buf += b"\x48\x8b\x18"
                     self.push_reg(Reg.rbx)
                 elif op[1] == IntrinsicKind.WRITE64:
