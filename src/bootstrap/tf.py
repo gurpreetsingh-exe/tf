@@ -294,6 +294,13 @@ def generate_intrinsic(ir):
             "    push rdx\n"
         case IntrinsicKind.HERE:
             assert False, "this should be unreachable"
+        case IntrinsicKind.FSQRT:
+            return \
+            "    pop rax\n" + \
+            "    movq xmm0, rax\n" + \
+            "    sqrtsd xmm0, xmm0\n" + \
+            "    movq rax, xmm0\n" + \
+            "    push rax\n"
         case _:
             print("Undefined intrinsic")
             exit(1)
@@ -699,6 +706,11 @@ def type_chk(ir, data, new_scope=False):
                 assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
             elif node[1] == IntrinsicKind.HERE:
                 stack.append(TypeKind.INT)
+            elif node[1] == IntrinsicKind.FSQRT:
+                stack, val = pop_without_underflow(stack, node)
+                if val != TypeKind.FLOAT:
+                    emit_error(f"Expected `float` but got `{val}`", node)
+                stack.append(TypeKind.FLOAT)
             else:
                 assert False, f"Undefined intrinsic {node[1]}"
         elif node[0] == IRKind.Call:

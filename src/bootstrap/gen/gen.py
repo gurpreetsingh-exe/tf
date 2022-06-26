@@ -479,6 +479,13 @@ class Gen:
                     self.buf += b"\x68"
                     self.label(f"__here{len(self.locs)}", 0)
                     self.locs.append(op[-1])
+                elif op[1] == IntrinsicKind.FSQRT:
+                    self.pop_reg(Reg.rax)
+                    self.mov_sse(Reg.xmm0, Reg.rax)
+                    # sqrtsd xmm0, xmm0
+                    self.buf += b"\xf2\x0f\x51\xc0"
+                    self.mov_sse(Reg.rax, Reg.xmm0)
+                    self.push_reg(Reg.rax)
                 else:
                     assert False, f"{op[1]} is not implemented"
             elif op[0] == IRKind.Call:

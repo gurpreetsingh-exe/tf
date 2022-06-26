@@ -42,6 +42,8 @@ class IntrinsicKind(Enum):
     PRINT = auto()
     SYSCALL = auto()
 
+    FSQRT = auto()
+
 Intrinsics = {
     "drop"       : IntrinsicKind.DROP,
     "swap"       : IntrinsicKind.SWAP,
@@ -60,6 +62,7 @@ Intrinsics = {
     "print"      : IntrinsicKind.PRINT,
     "syscall"    : IntrinsicKind.SYSCALL,
     "here"       : IntrinsicKind.HERE,
+    "fsqrt"      : IntrinsicKind.FSQRT,
 }
 
 class Intrinsic(Repr):
