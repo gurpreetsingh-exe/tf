@@ -677,24 +677,24 @@ def type_chk(ir, data, new_scope=False):
                     emit_error(f"Cannot read `{addr}`", node)
                 stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.WRITE8:
-                stack, addr = pop_without_underflow(stack, node)
-                if addr not in {TypeKind.INT}:
-                    emit_error(f"Cannot write to `{addr}`", node)
                 stack, val = pop_without_underflow(stack, node)
                 if val not in {TypeKind.INT}:
                     emit_error(f"Expected `int` but got `{val}`", node)
+                stack, addr = pop_without_underflow(stack, node)
+                if addr not in {TypeKind.INT}:
+                    emit_error(f"Cannot write to `{addr}`", node)
             elif node[1] == IntrinsicKind.READ64:
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {TypeKind.STR, TypeKind.INT}:
                     emit_error(f"Cannot read `{addr}`", node)
                 stack.append(TypeKind.INT)
             elif node[1] == IntrinsicKind.WRITE64:
+                stack, val = pop_without_underflow(stack, node)
+                if val not in {TypeKind.INT, TypeKind.FLOAT}:
+                    emit_error(f"Expected `int` or `float` but got `{val}`", node)
                 stack, addr = pop_without_underflow(stack, node)
                 if addr not in {TypeKind.INT}:
                     emit_error(f"Cannot write to `{addr}`", node)
-                stack, val = pop_without_underflow(stack, node)
-                if val not in {TypeKind.INT}:
-                    emit_error(f"Expected `int` but got `{val}`", node)
             elif node[1] == IntrinsicKind.DIVMOD:
                 assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
             elif node[1] == IntrinsicKind.HERE:
