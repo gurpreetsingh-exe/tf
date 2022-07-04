@@ -13,6 +13,7 @@ class IRKind(Enum):
     Binary = auto()
     Intrinsic = auto()
     Call = auto()
+    Deref = auto()
     If = auto()
     Do = auto()
     While = auto()
@@ -69,6 +70,7 @@ expressions = [
     TokenKind.TILDE,
     TokenKind.LET,
     TokenKind.AMPERSAND,
+    TokenKind.AT,
 ] + list(BinaryOps.keys())
 
 class Parser:
@@ -182,6 +184,10 @@ class Parser:
                 self.advance()
                 symbol = self.expect(TokenKind.IDENT).value
                 yield [IRKind.PushAddr, symbol, start_loc]
+            elif self.curr_tok.typ == TokenKind.AT:
+                self.advance()
+                symbol = self.expect(TokenKind.IDENT).value
+                yield [IRKind.Deref, symbol, start_loc]
             else:
                 return
 

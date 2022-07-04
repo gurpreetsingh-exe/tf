@@ -391,6 +391,13 @@ def generate_body(ir, data):
             buffer += f"    call {op[1]}\n"
             if data['funcs'][op[1]][2]:
                 buffer += "    push rax\n"
+        elif op[0] == IRKind.Deref:
+            off = find_var(data['scopes'], op[1])
+            match op[2]:
+                case TypeKind.INT | TypeKind.FLOAT | TypeKind.STR | TypeKind.BOOL:
+                    buffer += f"    mov rax, [rbp - {off}]\n    push QWORD [rax]\n"
+                case _:
+                    assert False, f"{op[2]} is not defined"
         elif op[0] == IRKind.If:
             buffer += \
             "    pop rax\n" + \
@@ -594,7 +601,16 @@ def type_chk(ir, data, new_scope=False):
                 emit_error(f"`{node[1]}` is not defined", node)
         elif node[0] == IRKind.PushAddr:
             # TODO: man just introduce a usize or something
-            stack.append(TypeKind.INT)
+            typ = None
+            for i in reversed(range(len(data['scopes']))):
+                for d in data['scopes'][i]:
+                    if node[1] == d['sym']:
+                        typ = d['type']
+                        break
+            if typ != None:
+                stack.append(typ)
+            else:
+                emit_error(f"`{node[1]}` is not defined", node)
         elif node[0] == IRKind.Binary:
             if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
                 stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.FLOAT})
@@ -722,6 +738,18 @@ def type_chk(ir, data, new_scope=False):
                     emit_error(f"`{fn['sym']}` Expected {exp_typ} but got {real_typ}", node)
             if sig[1]:
                 stack.append(sig[2])
+        elif node[0] == IRKind.Deref:
+            typ = None
+            for i in reversed(range(len(data['scopes']))):
+                for d in data['scopes'][i]:
+                    if node[1] == d['sym']:
+                        typ = d['type']
+                        break
+            if typ != None:
+                ir[id].insert(2, typ)
+                stack.append(typ)
+            else:
+                emit_error(f"`{node[1]}` is not defined", node)
         elif node[0] == IRKind.If:
             stack, cond = pop_without_underflow(stack, node)
             if cond != TypeKind.BOOL:
