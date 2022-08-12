@@ -31,13 +31,13 @@ class State:
 def generate_binary_op(op):
     match op[1]:
         case BinaryKind.ADD:
-            if op[2] == TypeKind.INT:
+            if op[2] in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64}:
                 return \
                 "    pop rax\n" + \
                 "    pop rbx\n" + \
                 "    add rax, rbx\n" + \
                 "    push rax\n"
-            elif op[2] == TypeKind.FLOAT:
+            elif op[2] in {TypeKind.F32, TypeKind.F64}:
                 return \
                 "    pop rax\n" + \
                 "    pop rbx\n" + \
@@ -49,13 +49,13 @@ def generate_binary_op(op):
             else:
                 print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.SUB:
-            if op[2] == TypeKind.INT:
+            if op[2] in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64}:
                 return \
                 "    pop rbx\n" + \
                 "    pop rax\n" + \
                 "    sub rax, rbx\n" + \
                 "    push rax\n"
-            elif op[2] == TypeKind.FLOAT:
+            elif op[2] in {TypeKind.F32, TypeKind.F64}:
                 return \
                 "    pop rbx\n" + \
                 "    pop rax\n" + \
@@ -67,13 +67,13 @@ def generate_binary_op(op):
             else:
                 print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.MUL:
-            if op[2] == TypeKind.INT:
+            if op[2] in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64}:
                 return \
                 "    pop rax\n" + \
                 "    pop rbx\n" + \
                 "    imul rax, rbx\n" + \
                 "    push rax\n"
-            elif op[2] == TypeKind.FLOAT:
+            elif op[2] in {TypeKind.F32, TypeKind.F64}:
                 return \
                 "    pop rax\n" + \
                 "    pop rbx\n" + \
@@ -85,14 +85,14 @@ def generate_binary_op(op):
             else:
                 print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.DIV:
-            if op[2] == TypeKind.INT:
+            if op[2] in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64}:
                 return \
                 "    pop rbx\n" + \
                 "    pop rax\n" + \
                 "    cqo\n" + \
                 "    idiv rbx\n" + \
                 "    push rax\n"
-            elif op[2] == TypeKind.FLOAT:
+            elif op[2] in {TypeKind.F32, TypeKind.F64}:
                 return \
                 "    pop rbx\n" + \
                 "    pop rax\n" + \
@@ -104,7 +104,7 @@ def generate_binary_op(op):
             else:
                 print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.LT:
-            if op[2] == TypeKind.INT:
+            if op[2] in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64}:
                 return \
                 "    pop rbx\n" + \
                 "    pop rax\n" + \
@@ -113,7 +113,7 @@ def generate_binary_op(op):
                 "    mov rax, 0\n" + \
                 "    setle al\n" + \
                 "    push rax\n"
-            elif op[2] == TypeKind.FLOAT:
+            elif op[2] in {TypeKind.F32, TypeKind.F64}:
                 return \
                 "    pop rax\n" + \
                 "    pop rbx\n" + \
@@ -126,7 +126,7 @@ def generate_binary_op(op):
             else:
                 print(f"Unreachable in `generate_binary_op`, OP: {op[1]}, TYPE: {op[2]}")
         case BinaryKind.GT:
-            if op[2] == TypeKind.INT:
+            if op[2] in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64}:
                 return \
                 "    pop rbx\n" + \
                 "    pop rax\n" + \
@@ -134,7 +134,7 @@ def generate_binary_op(op):
                 "    mov rax, 0\n" + \
                 "    setg al\n" + \
                 "    push rax\n"
-            elif op[2] == TypeKind.FLOAT:
+            elif op[2] in {TypeKind.F32, TypeKind.F64}:
                 return \
                 "    pop rbx\n" + \
                 "    pop rax\n" + \
@@ -244,7 +244,7 @@ def generate_intrinsic(ir):
             return \
             "    push mem\n"
         case IntrinsicKind.CAST_INT:
-            if ir[2] == TypeKind.FLOAT:
+            if ir[2] in {TypeKind.F32, TypeKind.F64}:
                 return \
                 "    pop rax\n" + \
                 "    movq xmm0, rax\n" + \
@@ -254,7 +254,7 @@ def generate_intrinsic(ir):
         case IntrinsicKind.CAST_STR:
             return ""
         case IntrinsicKind.CAST_FLOAT:
-            if ir[2] == TypeKind.INT:
+            if ir[2] in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64}:
                 return \
                 "    pop rax\n" + \
                 "    pxor xmm0, xmm0\n" + \
@@ -568,7 +568,7 @@ def find_func(node, data):
 def check_binary_op(node, stack, expected):
     stack, rhs = pop_without_underflow(stack, node)
     stack, lhs = pop_without_underflow(stack, node)
-    if TypeKind.FLOAT in [lhs, rhs] and node[1] in [BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
+    if node[1] in [BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD] and (TypeKind.F32 in [lhs, rhs] or TypeKind.F64 in [lhs, rhs]):
         emit_error(f"expected `int` but got `float`", node)
     if lhs not in expected or rhs not in expected:
         emit_error(f"expected {expected} for {node[1]} but got `{lhs}` and `{rhs}`", node)
@@ -581,9 +581,9 @@ def type_chk(ir, data, new_scope=False):
 
     for id, node in enumerate(ir):
         if node[0] == IRKind.PushInt:
-            stack.append(TypeKind.INT)
+            stack.append(TypeKind.I64)
         elif node[0] == IRKind.PushFloat:
-            stack.append(TypeKind.FLOAT)
+            stack.append(TypeKind.F64)
         elif node[0] == IRKind.PushStr:
             stack.append(TypeKind.STR)
         elif node[0] == IRKind.PushBool:
@@ -613,25 +613,18 @@ def type_chk(ir, data, new_scope=False):
                 emit_error(f"`{node[1]}` is not defined", node)
         elif node[0] == IRKind.Binary:
             if node[1] in [BinaryKind.ADD, BinaryKind.SUB, BinaryKind.MUL, BinaryKind.DIV, BinaryKind.SHL, BinaryKind.SHR, BinaryKind.MOD]:
-                stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.FLOAT})
-                if TypeKind.FLOAT in operands:
-                    ir[id][2] = TypeKind.FLOAT
-                    stack.append(TypeKind.FLOAT)
-                else:
-                    ir[id][2] = TypeKind.INT
-                    stack.append(TypeKind.INT)
+                stack, operands = check_binary_op(node, stack, {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64, TypeKind.F32, TypeKind.F64})
+                ir[id][2] = operands[0]
+                stack.append(operands[0])
             elif node[1] in [BinaryKind.LT, BinaryKind.GT]:
-                stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.FLOAT})
-                if TypeKind.FLOAT in operands:
-                    ir[id][2] = TypeKind.FLOAT
-                else:
-                    ir[id][2] = TypeKind.INT
+                stack, operands = check_binary_op(node, stack, {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64, TypeKind.F32, TypeKind.F64})
+                ir[id][2] = operands[0]
                 stack.append(TypeKind.BOOL)
             elif node[1] in [BinaryKind.AND, BinaryKind.OR]:
                 stack, operands = check_binary_op(node, stack, {TypeKind.BOOL})
                 stack.append(TypeKind.BOOL)
             elif node[1] in [BinaryKind.EQ, BinaryKind.NOTEQ]:
-                stack, operands = check_binary_op(node, stack, {TypeKind.INT, TypeKind.BOOL})
+                stack, operands = check_binary_op(node, stack, {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64, TypeKind.BOOL})
                 stack.append(TypeKind.BOOL)
             else:
                 emit_error(f"Unexpected binary-op `{node[1]}`", node)
@@ -654,13 +647,13 @@ def type_chk(ir, data, new_scope=False):
         elif node[0] == IRKind.Intrinsic:
             if node[1] == IntrinsicKind.PRINT:
                 stack, typ = pop_without_underflow(stack, node)
-                if typ not in {TypeKind.INT, TypeKind.BOOL, TypeKind.FLOAT, TypeKind.STR}:
+                if typ not in {TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64, TypeKind.F32, TypeKind.F64, TypeKind.BOOL, TypeKind.STR}:
                     emit_error(f"`{node[1]}` expects an `int`, `bool`, `float`, `str` but `{typ}` was given", node)
             elif node[1] == IntrinsicKind.SYSCALL:
                 stack, typ = pop_without_underflow(stack, node)
-                if typ not in {TypeKind.INT}:
+                if typ not in {TypeKind.I64}:
                     emit_error(f"`{node[1]}` expects an `int` but `{typ}` was given", node)
-                stack.append(TypeKind.INT)
+                stack.append(TypeKind.I64)
             elif node[1] == IntrinsicKind.DROP:
                 stack, _ = pop_without_underflow(stack, node)
             elif node[1] == IntrinsicKind.SWAP:
@@ -680,53 +673,51 @@ def type_chk(ir, data, new_scope=False):
                 stack, three = pop_without_underflow(stack, node)
                 stack += [two, one, three]
             elif node[1] == IntrinsicKind.MEM:
-                stack.append(TypeKind.INT)
+                stack.append(TypeKind.I64)
             elif node[1] == IntrinsicKind.CAST_INT:
                 stack, typ = pop_without_underflow(stack, node)
-                if typ == TypeKind.FLOAT:
-                    ir[id] = ir[id][:2] + [typ] + ir[id][-1:]
-                stack.append(TypeKind.INT)
+                ir[id] = ir[id][:2] + [typ] + ir[id][-1:]
+                stack.append(TypeKind.I64)
             elif node[1] == IntrinsicKind.CAST_STR:
                 stack, typ = pop_without_underflow(stack, node)
                 stack.append(TypeKind.STR)
             elif node[1] == IntrinsicKind.CAST_FLOAT:
                 stack, typ = pop_without_underflow(stack, node)
-                if typ == TypeKind.INT:
-                    ir[id] = ir[id][:2] + [typ] + ir[id][-1:]
-                stack.append(TypeKind.FLOAT)
+                ir[id] = ir[id][:2] + [typ] + ir[id][-1:]
+                stack.append(TypeKind.F64)
             elif node[1] == IntrinsicKind.READ8:
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {TypeKind.STR, TypeKind.INT}:
+                if addr != TypeKind.I64:
                     emit_error(f"Cannot read `{addr}`", node)
-                stack.append(TypeKind.INT)
+                stack.append(TypeKind.I8)
             elif node[1] == IntrinsicKind.WRITE8:
                 stack, val = pop_without_underflow(stack, node)
-                if val not in {TypeKind.INT}:
+                if val != TypeKind.I64:
                     emit_error(f"Expected `int` but got `{val}`", node)
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {TypeKind.INT}:
+                if addr != TypeKind.I64:
                     emit_error(f"Cannot write to `{addr}`", node)
             elif node[1] == IntrinsicKind.READ64:
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {TypeKind.STR, TypeKind.INT}:
+                if addr not in {TypeKind.STR, TypeKind.I64}:
                     emit_error(f"Cannot read `{addr}`", node)
-                stack.append(TypeKind.INT)
+                stack.append(TypeKind.I64)
             elif node[1] == IntrinsicKind.WRITE64:
                 stack, val = pop_without_underflow(stack, node)
-                if val not in {TypeKind.INT, TypeKind.FLOAT}:
+                if val not in {TypeKind.I64, TypeKind.F64}:
                     emit_error(f"Expected `int` or `float` but got `{val}`", node)
                 stack, addr = pop_without_underflow(stack, node)
-                if addr not in {TypeKind.INT}:
+                if addr not in {TypeKind.I64}:
                     emit_error(f"Cannot write to `{addr}`", node)
             elif node[1] == IntrinsicKind.DIVMOD:
                 assert False, "TODO: remove this intrinsic and add a separate `mod` binary-op"
             elif node[1] == IntrinsicKind.HERE:
-                stack.append(TypeKind.INT)
+                stack.append(TypeKind.I64)
             elif node[1] == IntrinsicKind.FSQRT:
                 stack, val = pop_without_underflow(stack, node)
-                if val != TypeKind.FLOAT:
+                if val not in {TypeKind.F32, TypeKind.F64}:
                     emit_error(f"Expected `float` but got `{val}`", node)
-                stack.append(TypeKind.FLOAT)
+                stack.append(TypeKind.F64)
             else:
                 assert False, f"Undefined intrinsic {node[1]}"
         elif node[0] == IRKind.Call:

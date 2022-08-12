@@ -17,8 +17,12 @@ class LiteralKind(Enum):
 
 class TypeKind(Enum):
     STR = auto()
-    INT = auto()
-    FLOAT = auto()
+    I8 = auto()
+    I16 = auto()
+    I32 = auto()
+    I64 = auto()
+    F32 = auto()
+    F64 = auto()
     BOOL = auto()
 
 class IntrinsicKind(Enum):

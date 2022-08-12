@@ -57,10 +57,16 @@ BinaryOps = {
 }
 
 type_dict = {
-    "int"   : TypeKind.INT,
-    "float" : TypeKind.FLOAT,
-    "str"   : TypeKind.STR,
-    "bool"  : TypeKind.BOOL,
+    "i8"   : TypeKind.I8,
+    "i16"  : TypeKind.I16,
+    "i32"  : TypeKind.I32,
+    "i64"  : TypeKind.I64,
+
+    "f32"  : TypeKind.F32,
+    "f64"  : TypeKind.F64,
+
+    "str"  : TypeKind.STR,
+    "bool" : TypeKind.BOOL,
 }
 
 expressions = [
@@ -103,7 +109,7 @@ class Parser:
         self.expect(TokenKind.LPAREN)
         while self.curr_tok.typ != TokenKind.RPAREN:
             typ = self.expect(TokenKind.IDENT).value
-            if typ not in {'int', 'str', 'bool', 'float'}:
+            if typ not in type_dict:
                 print(f"Unexpected type `{typ}`")
             args.append(type_dict[typ])
             if self.curr_tok.typ == TokenKind.RPAREN:
