@@ -26,7 +26,7 @@ const O_CREAT 64
 
 const STATBUF_SIZE 144
 
-func:int string_len(str) {
+func string_len(str) -> int {
     let string;
     0 while dup string cast_int + read8 0 > do { 1+ }
     return
@@ -39,7 +39,7 @@ func println(str) {
     SYS_WRITE STDOUT string length 1 + ~[3] syscall ~[1]
 }
 
-func:int read(int, int, int) {
+func read(int, int, int) -> int {
     let fd, buf, size;
     fd buf size ~[3] SYS_READ syscall
     return
@@ -54,7 +54,7 @@ func write(int, str, int) {
 
 // TODO: there is a stack alignment bug which is why stack vars
 // are moved into locals
-func:int open(str, int, int) {
+func open(str, int, int) -> int {
     let fd, flags, mode;
     fd cast_int flags mode ~[3] SYS_OPEN syscall
     return

@@ -10,7 +10,7 @@ import linux
 // # Return value
 //
 // * `int` - pointer to the beginning of the allocated chunk
-func:int __tf_alloc(int) {
+func __tf_alloc(int) -> int {
     let len;
     0 len 3 34 0 0 ~[6] SYS_MMAP syscall
     return
@@ -28,7 +28,7 @@ func:int __tf_alloc(int) {
 // # Return value
 //
 // * `int` - pointer to the re-allocated chunk
-func:int __tf_realloc(int, int, int) {
+func __tf_realloc(int, int, int) -> int {
     let old_addr, old_size, new_size;
     old_addr old_size new_size 0 ~[4] SYS_MREMAP syscall
     return

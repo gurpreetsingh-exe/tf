@@ -233,12 +233,12 @@ class Parser:
             start_loc = self.curr_tok.loc
             if self.curr_tok.typ == TokenKind.FUNC:
                 self.expect(TokenKind.FUNC)
-                ret_type = None
-                if self.curr_tok.typ == TokenKind.COLON:
-                    self.expect(TokenKind.COLON)
-                    ret_type = type_dict[self.expect(TokenKind.IDENT).value]
                 symbol = self.expect(TokenKind.IDENT).value
                 sign = self.func_sign()
+                ret_type = None
+                if self.curr_tok.typ == TokenKind.ARROW:
+                    self.expect(TokenKind.ARROW)
+                    ret_type = type_dict[self.expect(TokenKind.IDENT).value]
                 body = self.block()
                 sign.append(self.has_return)
                 sign.append(ret_type)

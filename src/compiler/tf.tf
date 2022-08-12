@@ -25,7 +25,7 @@ const BINARY_ADD 2
 // # Return value
 //
 // * `int` - pointer to the beginning of the allocated chunk
-func:int __tf_alloc(int) {
+func __tf_alloc(int) -> int {
     let len;
     0 len 3 34 0 0 ~[6] SYS_MMAP syscall
     return
@@ -43,7 +43,7 @@ func:int __tf_alloc(int) {
 // # Return value
 //
 // * `int` - pointer to the re-allocated chunk
-func:int __tf_realloc(int, int, int) {
+func __tf_realloc(int, int, int) -> int {
     let old_addr, old_size, new_size;
     old_addr old_size new_size 0 ~[4] SYS_MREMAP syscall
     return
@@ -102,7 +102,7 @@ macro append_token {
 // # Return
 //
 // * `int` - pointer to the `token_list` struct
-func:int lex_tokens(int, int) {
+func lex_tokens(int, int) -> int {
     let buf, length;
 
     // buffer to collect all the words in
@@ -165,7 +165,7 @@ func:int lex_tokens(int, int) {
 // # Return
 //
 // * `int` - pointer to the `program` struct
-func:int read_file(str) {
+func read_file(str) -> int {
     // get file descriptor to read the file
     O_RDONLY 0 open! let fd;
 

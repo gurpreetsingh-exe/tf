@@ -117,6 +117,7 @@ class TokenKind(Enum):
     AMPERSAND2  = auto()  # `&&`
     EQ2         = auto()  # `==`
     BANGEQ      = auto()  # `!=`
+    ARROW       = auto()  # `->`
 
     EOF         = auto()
     UNDEFINED   = auto()
@@ -165,4 +166,5 @@ Punctuators = {
     '||': TokenKind.PIPE2,
     '==': TokenKind.EQ2,
     '!=': TokenKind.BANGEQ,
+    '->': TokenKind.ARROW,
 }

@@ -1,7 +1,7 @@
 import linux
 import std
 
-func:int number_to_mem(int) {
+func number_to_mem(int) -> int {
     let number;
     0 while number 0 != do {
         dup mem 512 + swap - number 10 % 48 + write8
