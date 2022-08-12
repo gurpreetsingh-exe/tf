@@ -2,7 +2,7 @@ import linux
 import panic
 import mod_assert
 
-func foo() -> int {
+func foo() -> i64 {
     69 return
 }
 
