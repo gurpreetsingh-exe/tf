@@ -83,3 +83,11 @@ func exit(int) {
     ~[1] SYS_EXIT syscall drop
 }
 
+
+func rand() -> int {
+    "/dev/urandom" 0 0 open! let fd;
+    0 let a;
+    fd &a 8 read! drop
+    a
+    return
+}
