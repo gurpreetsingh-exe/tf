@@ -111,6 +111,7 @@ class Parser:
             typ = self.expect(TokenKind.IDENT).value
             if typ not in type_dict:
                 print(f"Unexpected type `{typ}`")
+                exit(1)
             args.append(type_dict[typ])
             if self.curr_tok.typ == TokenKind.RPAREN:
                 break

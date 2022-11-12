@@ -25,7 +25,7 @@ const BINARY_ADD 2
 // # Return value
 //
 // * `int` - pointer to the beginning of the allocated chunk
-func __tf_alloc(int) -> int {
+func __tf_alloc(i64) -> i64 {
     let len;
     0 len 3 34 0 0 ~[6] SYS_MMAP syscall
     return
@@ -43,7 +43,7 @@ func __tf_alloc(int) -> int {
 // # Return value
 //
 // * `int` - pointer to the re-allocated chunk
-func __tf_realloc(int, int, int) -> int {
+func __tf_realloc(i64, i64, i64) -> i64 {
     let old_addr, old_size, new_size;
     old_addr old_size new_size 0 ~[4] SYS_MREMAP syscall
     return
@@ -56,7 +56,7 @@ func __tf_realloc(int, int, int) -> int {
 //
 // * `int` - addr to the pointer
 // * `int` - len of the chunk
-func __tf_dealloc(int, int) {
+func __tf_dealloc(i64, i64) {
     let addr, len;
     addr len ~[2] SYS_MUNMAP syscall drop
 }
@@ -102,7 +102,7 @@ macro append_token {
 // # Return
 //
 // * `int` - pointer to the `token_list` struct
-func lex_tokens(int, int) -> int {
+func lex_tokens(i64, i64) -> i64 {
     let buf, length;
 
     // buffer to collect all the words in
@@ -165,7 +165,7 @@ func lex_tokens(int, int) -> int {
 // # Return
 //
 // * `int` - pointer to the `program` struct
-func read_file(str) -> int {
+func read_file(str) -> i64 {
     // get file descriptor to read the file
     O_RDONLY 0 open! let fd;
 
@@ -236,7 +236,7 @@ macro append_ir {
 // * `int` - pointer to `token_list` array
 // * `int` - pointer to `program` struct
 // * `int` - pointer to `ir_list` array
-func gen_ir(int, int, int) {
+func gen_ir(i64, i64, i64) {
     let token_list, program, ir_list;
     token_list read64 let ntokens;
     program read64 let buf;
@@ -263,7 +263,7 @@ func gen_ir(int, int, int) {
 // # Arguments
 //
 // * `int` - command-line arguments
-func main(int) {
+func main(i64) {
     let argv;
     argv read64 2 < if {
         "Usage: tf file...\n" println()

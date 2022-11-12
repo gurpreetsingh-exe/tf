@@ -692,7 +692,7 @@ def type_chk(ir, data, new_scope=False):
                 stack.append(TypeKind.I8)
             elif node[1] == IntrinsicKind.WRITE8:
                 stack, val = pop_without_underflow(stack, node)
-                if val != TypeKind.I64:
+                if val not in [TypeKind.I8, TypeKind.I16, TypeKind.I32, TypeKind.I64]:
                     emit_error(f"Expected `int` but got `{val}`", node)
                 stack, addr = pop_without_underflow(stack, node)
                 if addr != TypeKind.I64:
