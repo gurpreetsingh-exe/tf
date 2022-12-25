@@ -1,29 +1,5 @@
 from token_types import *
-
-class IRKind(Enum):
-    Func = auto()
-    FuncSign = auto()
-    Block = auto()
-    PushInt = auto()
-    PushFloat = auto()
-    PushStr = auto()
-    PushBool = auto()
-    PushVar = auto()
-    PushAddr = auto()
-    Binary = auto()
-    Intrinsic = auto()
-    Call = auto()
-    Deref = auto()
-    If = auto()
-    Do = auto()
-    While = auto()
-    Destruct = auto()
-    Let = auto()
-    Const = auto()
-    Return = auto()
-    Import = auto()
-    Macro = auto()
-    MacroCall = auto()
+from Ast import *
 
 class BinaryKind(Enum):
     ADD = auto()
@@ -85,11 +61,13 @@ class Parser:
         self.tokens = tokens
         self.idx = 0
         self.curr_tok = self.tokens[self.idx]
+        self.prev_tok = None
         self.has_return = False
 
         self.addr = 0
 
     def advance(self):
+        self.prev_tok = self.curr_tok
         if self.idx < len(self.tokens) - 1:
             self.idx += 1
             self.curr_tok = self.tokens[self.idx]
@@ -118,7 +96,7 @@ class Parser:
             else:
                 self.expect(TokenKind.COMMA)
         self.expect(TokenKind.RPAREN)
-        return [IRKind.FuncSign, args]
+        return FnSig(args, None)
 
     def block(self):
         self.expect(TokenKind.LCURLY)
@@ -136,36 +114,37 @@ class Parser:
             if self.curr_tok.typ == TokenKind.LITERAL:
                 lit = self.curr_tok.value
                 if lit.typ == LiteralKind.INT:
-                    ir = [IRKind.PushInt, lit.value]
+                    ir = PushInt(lit.value)
                 elif lit.typ == LiteralKind.FLOAT:
                     flt_addr = self.inc_addr_get()
-                    ir = [IRKind.PushFloat, lit.value, flt_addr]
+                    ir = PushFloat(lit.value, flt_addr)
                 elif lit.typ == LiteralKind.STR:
                     str_addr = self.inc_addr_get()
-                    ir = [IRKind.PushStr, lit.value, str_addr]
+                    ir = PushStr(lit.value, str_addr)
                 elif lit.typ == LiteralKind.BOOL:
-                    ir = [IRKind.PushBool, lit.value]
+                    ir = PushBool(lit.value)
                 self.advance()
-                yield ir + [start_loc]
+                ir.loc = start_loc
+                yield ir
             elif self.curr_tok.typ in BinaryOps:
                 op = self.curr_tok.typ
                 self.advance()
-                yield [IRKind.Binary, BinaryOps[op], None, start_loc]
+                yield Binary(BinaryOps[op], None, start_loc)
             elif self.curr_tok.typ == TokenKind.INTRINSIC:
                 intrinsic = self.curr_tok.value
                 self.advance()
-                yield [IRKind.Intrinsic, Intrinsics[intrinsic.value], start_loc]
+                yield Intrinsic(Intrinsics[intrinsic.value], start_loc)
             elif self.curr_tok.typ == TokenKind.IDENT:
                 symbol = self.expect(TokenKind.IDENT).value
                 if self.curr_tok.typ == TokenKind.LPAREN:
                     self.expect(TokenKind.LPAREN)
                     self.expect(TokenKind.RPAREN)
-                    yield [IRKind.Call, symbol, start_loc]
+                    yield Call(symbol, start_loc)
                 elif self.curr_tok.typ == TokenKind.BANG:
                     self.expect(TokenKind.BANG)
-                    yield [IRKind.MacroCall, symbol, start_loc]
+                    yield MacroCall(symbol, start_loc)
                 else:
-                    yield [IRKind.PushVar, symbol, start_loc]
+                    yield PushVar(symbol, start_loc)
             elif self.curr_tok.typ == TokenKind.TILDE:
                 self.expect(TokenKind.TILDE)
                 self.expect(TokenKind.LBRACKET)
@@ -174,7 +153,7 @@ class Parser:
                     print("Expected number in destruct operator")
                     exit(1)
                 self.expect(TokenKind.RBRACKET)
-                yield [IRKind.Destruct, lit.value, start_loc]
+                yield Destruct(lit.value, start_loc)
             elif self.curr_tok.typ == TokenKind.LET:
                 self.expect(TokenKind.LET)
                 syms = []
@@ -186,15 +165,15 @@ class Parser:
                     else:
                         self.expect(TokenKind.COMMA)
                 self.expect(TokenKind.SEMI)
-                yield [IRKind.Let, syms, start_loc]
+                yield Let(syms, start_loc)
             elif self.curr_tok.typ == TokenKind.AMPERSAND:
                 self.advance()
                 symbol = self.expect(TokenKind.IDENT).value
-                yield [IRKind.PushAddr, symbol, start_loc]
+                yield PushAddr(symbol, start_loc)
             elif self.curr_tok.typ == TokenKind.AT:
                 self.advance()
                 symbol = self.expect(TokenKind.IDENT).value
-                yield [IRKind.Deref, symbol, start_loc]
+                yield Deref(symbol, start_loc)
             else:
                 return
 
@@ -213,24 +192,24 @@ class Parser:
                     self.expect(TokenKind.ELSE)
                     else_addr = self.inc_addr_get()
                     else_block = self.block()
-                yield [IRKind.If, body, if_addr, else_block, else_addr, start_loc]
+                yield If(body, if_addr, else_block, else_addr, start_loc)
             elif self.curr_tok.typ == TokenKind.DO:
                 self.expect(TokenKind.DO)
                 do_addr = self.addr
                 end_addr = self.inc_addr_get()
                 body = self.block()
-                yield [IRKind.Do, body, do_addr, end_addr, start_loc]
+                yield Do(body, do_addr, end_addr, start_loc)
             elif self.curr_tok.typ == TokenKind.WHILE:
                 self.expect(TokenKind.WHILE)
-                yield [IRKind.While, self.inc_addr_get(), start_loc]
+                yield While(self.inc_addr_get(), start_loc)
             elif self.curr_tok.typ == TokenKind.CONST:
                 self.expect(TokenKind.CONST)
                 name = self.expect(TokenKind.IDENT).value
                 lit = self.expect(TokenKind.LITERAL).value
-                yield [IRKind.Const, name, lit.typ, lit.value, start_loc]
+                yield Const(name, lit.typ, lit.value, start_loc)
             elif self.curr_tok.typ == TokenKind.RETURN:
                 self.expect(TokenKind.RETURN)
-                yield [IRKind.Return, start_loc]
+                yield Return(start_loc)
                 self.has_return = True
             else:
                 return
@@ -238,7 +217,10 @@ class Parser:
     def parse(self):
         while self.curr_tok != TokenKind.EOF:
             start_loc = self.curr_tok.loc
-            if self.curr_tok.typ == TokenKind.FUNC:
+            if self.curr_tok.typ == TokenKind.EXTERN:
+                self.advance()
+            elif self.curr_tok.typ == TokenKind.FUNC:
+                extern = self.prev_tok and self.prev_tok.typ == TokenKind.EXTERN
                 self.expect(TokenKind.FUNC)
                 symbol = self.expect(TokenKind.IDENT).value
                 sign = self.func_sign()
@@ -246,10 +228,12 @@ class Parser:
                 if self.curr_tok.typ == TokenKind.ARROW:
                     self.expect(TokenKind.ARROW)
                     ret_type = type_dict[self.expect(TokenKind.IDENT).value]
-                body = self.block()
-                sign.append(self.has_return)
-                sign.append(ret_type)
-                yield [IRKind.Func, symbol, sign, body, start_loc]
+                body = None
+                if self.curr_tok.typ == TokenKind.LCURLY:
+                    body = self.block()
+                sign.has_ret = self.has_return
+                sign.ret_ty = ret_type
+                yield Fn(symbol, sign, body, extern, start_loc)
                 self.has_return = False
             elif self.curr_tok.typ == TokenKind.MACRO:
                 self.expect(TokenKind.MACRO)
@@ -268,10 +252,10 @@ class Parser:
                         exit(1)
                     tokens += list(self.expr())
                 self.expect(TokenKind.RCURLY)
-                yield [IRKind.Macro, macro_name, tokens, start_loc]
+                yield Macro(macro_name, tokens, start_loc)
             elif self.curr_tok.typ == TokenKind.IMPORT:
                 self.expect(TokenKind.IMPORT)
                 name = self.expect(TokenKind.IDENT).value
-                yield [IRKind.Import, name, start_loc]
+                yield Import(name, start_loc)
             else:
                 yield from self.stmt()

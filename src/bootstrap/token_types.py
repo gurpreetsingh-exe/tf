@@ -89,6 +89,7 @@ class TokenKind(Enum):
     RETURN      = auto()
     IMPORT      = auto()
     MACRO       = auto()
+    EXTERN      = auto()
 
     PLUS        = auto()  # `+`
     MINUS       = auto()  # `-`
@@ -137,6 +138,7 @@ Keywords = {
     "return": TokenKind.RETURN,
     "import": TokenKind.IMPORT,
     "macro" : TokenKind.MACRO,
+    "extern": TokenKind.EXTERN,
 }
 
 Punctuators = {
